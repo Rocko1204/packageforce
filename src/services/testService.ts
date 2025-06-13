@@ -315,7 +315,9 @@ export class TestService {
   }
 
   private async getTestClassIds(testClassNames: string[]): Promise<string[]> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     const ids: string[] = [];
 
@@ -338,7 +340,9 @@ export class TestService {
   }
 
   private async getNonTestClassIds(packagePath: string): Promise<string[]> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     const ids: string[] = [];
     const resolver = new MetadataResolver();
@@ -378,7 +382,9 @@ export class TestService {
     apexClassIds: string[],
     packageName: string
   ): Promise<TestResult> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     this.outputChannel.appendLine('🚀 Starting asynchronous test execution...');
 
@@ -417,7 +423,9 @@ export class TestService {
     apexClassIds: string[],
     packageName: string
   ): Promise<TestResult> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     this.outputChannel.appendLine('🚀 Starting synchronous test execution...');
     this.outputChannel.appendLine('⚠️  This may take several minutes...');
@@ -475,7 +483,9 @@ export class TestService {
   }
 
   private async queueTests(testClassIds: string[]): Promise<string> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     const response = await this.connection.requestPost(
       `${this.connection._baseUrl()}/tooling/runTestsAsynchronous/`,
@@ -491,7 +501,9 @@ export class TestService {
   }
 
   private async pollTestExecution(jobId: string): Promise<ApexTestQueueResult> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     let attempts = 0;
     const maxAttempts = 360; // 60 minutes with 10 second intervals
@@ -527,7 +539,9 @@ export class TestService {
   }
 
   private async checkTestStatus(jobId: string): Promise<ApexTestQueueResult> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     const result: ApexTestQueueResult = {
       QueuedList: [],
@@ -571,7 +585,9 @@ export class TestService {
     testClassIds: string[],
     jobId: string
   ): Promise<TestFailure[]> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     const failures: TestFailure[] = [];
 
@@ -601,7 +617,9 @@ export class TestService {
   private async getCodeCoverage(
     apexClassIds: string[]
   ): Promise<CoverageResult> {
-    if (!this.connection) {throw new Error('No connection established');}
+    if (!this.connection) {
+      throw new Error('No connection established');
+    }
 
     const classes: CoverageResult['classes'] = [];
     let totalCovered = 0;

@@ -70,8 +70,12 @@ export async function fetchScratchOrgFromPool(): Promise<void> {
 
       // Sort to show default first
       devHubItems.sort((a, b) => {
-        if (a.detail && !b.detail) {return -1;}
-        if (!a.detail && b.detail) {return 1;}
+        if (a.detail && !b.detail) {
+          return -1;
+        }
+        if (!a.detail && b.detail) {
+          return 1;
+        }
         return 0;
       });
 
@@ -328,8 +332,12 @@ export async function listScratchOrgsInPool(): Promise<void> {
 
       // Sort to show default first
       devHubItems.sort((a, b) => {
-        if (a.detail && !b.detail) {return -1;}
-        if (!a.detail && b.detail) {return 1;}
+        if (a.detail && !b.detail) {
+          return -1;
+        }
+        if (!a.detail && b.detail) {
+          return 1;
+        }
         return 0;
       });
 

@@ -250,21 +250,30 @@ export class ReportUtils {
       for (const violation of violations) {
         xml += '    <violation';
         xml += ` beginline="${violation.beginLine}"`;
-        if (violation.endLine) {xml += ` endline="${violation.endLine}"`;}
-        if (violation.beginColumn)
-          {xml += ` begincolumn="${violation.beginColumn}"`;}
-        if (violation.endColumn) {xml += ` endcolumn="${violation.endColumn}"`;}
+        if (violation.endLine) {
+          xml += ` endline="${violation.endLine}"`;
+        }
+        if (violation.beginColumn) {
+          xml += ` begincolumn="${violation.beginColumn}"`;
+        }
+        if (violation.endColumn) {
+          xml += ` endcolumn="${violation.endColumn}"`;
+        }
         xml += ` rule="${this.escapeXml(violation.rule)}"`;
         xml += ` ruleset="${this.escapeXml(violation.ruleset)}"`;
         xml += ` priority="${violation.priority}"`;
-        if (violation.externalInfoUrl)
-          {xml += ` externalInfoUrl="${this.escapeXml(violation.externalInfoUrl)}"`;}
-        if (violation.className)
-          {xml += ` class="${this.escapeXml(violation.className)}"`;}
-        if (violation.methodName)
-          {xml += ` method="${this.escapeXml(violation.methodName)}"`;}
-        if (violation.variableName)
-          {xml += ` variable="${this.escapeXml(violation.variableName)}"`;}
+        if (violation.externalInfoUrl) {
+          xml += ` externalInfoUrl="${this.escapeXml(violation.externalInfoUrl)}"`;
+        }
+        if (violation.className) {
+          xml += ` class="${this.escapeXml(violation.className)}"`;
+        }
+        if (violation.methodName) {
+          xml += ` method="${this.escapeXml(violation.methodName)}"`;
+        }
+        if (violation.variableName) {
+          xml += ` variable="${this.escapeXml(violation.variableName)}"`;
+        }
         xml += '>\n';
         xml += `      ${this.escapeXml(violation.message)}\n`;
         xml += '    </violation>\n';
