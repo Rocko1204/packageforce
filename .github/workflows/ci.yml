@@ -38,6 +38,8 @@ jobs:
 
       - name: Run Tests
         if: matrix.os != 'ubuntu-latest' # Skip tests on Linux in CI due to display requirements
+        env:
+          NODE_ENV: test
         run: npm test
 
       - name: Build Production Bundle
