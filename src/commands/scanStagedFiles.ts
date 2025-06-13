@@ -32,14 +32,14 @@ export async function scanStagedFiles() {
     // Filter for files that PMD can analyze
     const analyzableFiles = stagedFiles.filter(file => {
       // Apex files
-      if (file.endsWith('.cls') || file.endsWith('.trigger')) return true;
+      if (file.endsWith('.cls') || file.endsWith('.trigger')) {return true;}
 
       // Visualforce files
-      if (file.endsWith('.page') || file.endsWith('.component')) return true;
+      if (file.endsWith('.page') || file.endsWith('.component')) {return true;}
 
       // Lightning Web Components
-      if (file.endsWith('.js') && file.includes('/lwc/')) return true;
-      if (file.endsWith('.html') && file.includes('/lwc/')) return true;
+      if (file.endsWith('.js') && file.includes('/lwc/')) {return true;}
+      if (file.endsWith('.html') && file.includes('/lwc/')) {return true;}
 
       // Aura Components
       if (
@@ -47,15 +47,15 @@ export async function scanStagedFiles() {
         file.endsWith('.evt') ||
         file.endsWith('.app')
       )
-        return true;
-      if (file.endsWith('.js') && file.includes('/aura/')) return true;
+        {return true;}
+      if (file.endsWith('.js') && file.includes('/aura/')) {return true;}
 
       // Metadata files (for custom rules like empty descriptions)
       if (file.endsWith('.object-meta.xml') || file.endsWith('.field-meta.xml'))
-        return true;
-      if (file.endsWith('.flow-meta.xml')) return true;
-      if (file.endsWith('.permissionset-meta.xml')) return true;
-      if (file.endsWith('.profile-meta.xml')) return true;
+        {return true;}
+      if (file.endsWith('.flow-meta.xml')) {return true;}
+      if (file.endsWith('.permissionset-meta.xml')) {return true;}
+      if (file.endsWith('.profile-meta.xml')) {return true;}
 
       // Configuration files
       if (
@@ -66,7 +66,7 @@ export async function scanStagedFiles() {
           file.includes('/classes/') ||
           file.includes('/triggers/'))
       )
-        return true;
+        {return true;}
 
       return false;
     });

@@ -264,7 +264,7 @@ export class DeployService {
   private async displayErrors(
     details: DeployDetails | undefined
   ): Promise<void> {
-    if (!details) return;
+    if (!details) {return;}
 
     // Display component failures
     if (details.componentFailures) {

@@ -42,7 +42,7 @@ export async function executeMinimalChangelogCommand() {
       placeHolder: `Select change type for ${modifiedPackages[0].packageName}`,
     });
 
-    if (!changeType) return;
+    if (!changeType) {return;}
 
     // Get reference
     const reference = await vscode.window.showInputBox({
@@ -50,21 +50,21 @@ export async function executeMinimalChangelogCommand() {
       value: 'XXXXX-12345',
     });
 
-    if (!reference) return;
+    if (!reference) {return;}
 
     // Get description
     const description = await vscode.window.showInputBox({
       prompt: 'Describe your changes',
     });
 
-    if (!description) return;
+    if (!description) {return;}
 
     // Breaking changes
     const breaking = await vscode.window.showQuickPick(['No', 'Yes'], {
       placeHolder: 'Breaking changes?',
     });
 
-    if (!breaking) return;
+    if (!breaking) {return;}
 
     // Do the update
     const author = await gitService.getGitUser();
