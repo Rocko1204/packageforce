@@ -11,7 +11,6 @@ process.env.SF_DISABLE_INSIGHTS = 'true';
 process.env.NODE_ENV = 'test';
 
 suite('Extension Test Suite', () => {
-
   test('Extension should be present', () => {
     assert.ok(vscode.extensions.getExtension('Rocko1204.packageforce'));
   });
@@ -20,11 +19,11 @@ suite('Extension Test Suite', () => {
     assert.strictEqual(1 + 1, 2);
     assert.strictEqual(true, true);
   });
-  
+
   // Skip activation tests in CI to avoid Salesforce CLI issues
-  test.skip('Should activate without errors', async function() {
+  test.skip('Should activate without errors', async function () {
     this.timeout(10000);
-    
+
     const extension = vscode.extensions.getExtension('Rocko1204.packageforce');
     if (!extension) {
       assert.fail('Extension not found');

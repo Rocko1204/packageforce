@@ -32,11 +32,13 @@ export function activate(context: vscode.ExtensionContext) {
   try {
     console.log('Packageforce: Starting activation...');
     logger.info('Packageforce is activating...');
-    
+
     // Skip activation in test environment on macOS with Node 18
-    if (process.env.NODE_ENV === 'test' && 
-        process.platform === 'darwin' && 
-        process.version.startsWith('v18.')) {
+    if (
+      process.env.NODE_ENV === 'test' &&
+      process.platform === 'darwin' &&
+      process.version.startsWith('v18.')
+    ) {
       console.log('Packageforce: Skipping full activation in test environment');
       return;
     }
