@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as markdownTable from 'markdown-table';
+// Remove markdown-table dependency - use simple implementation
 import * as semver from 'semver';
 import { ChangelogEntry, ChangelogOptions, PackageChangeInfo, PluginSettings } from '../utils/changelogTypes';
 import { Logger } from '../utils/logger';
@@ -157,13 +157,27 @@ export class ChangelogService {
       description: options.description
     });
     
-    // Create markdown table
-    const tableData = [
-      ['Version', 'Reference', 'Author', 'Description'],
-      ...entries.map(e => [e.version, e.reference, e.author, e.description])
-    ];
+    // Create markdown table - simple implementation
+    const headers = ['Version', 'Reference', 'Author', 'Description'];
+    const rows = entries.map(e => [e.version, e.reference, e.author, e.description]);
     
-    const table = markdownTable.markdownTable(tableData);
+    // Calculate column widths
+    const columnWidths = headers.map((header, index) => {
+      const headerWidth = header.length;
+      const maxRowWidth = Math.max(...rows.map(row => row[index].length));
+      return Math.max(headerWidth, maxRowWidth);
+    });
+    
+    // Create header row
+    const headerRow = '| ' + headers.map((h, i) => h.padEnd(columnWidths[i])).join(' | ') + ' |';
+    const separatorRow = '|' + columnWidths.map(w => '-'.repeat(w + 2)).join('|') + '|';
+    
+    // Create data rows
+    const dataRows = rows.map(row => 
+      '| ' + row.map((cell, i) => cell.padEnd(columnWidths[i])).join(' | ') + ' |'
+    );
+    
+    const table = [headerRow, separatorRow, ...dataRows].join('\n');
     
     return `## Changelog\n\n${table}\n\n`;
   }

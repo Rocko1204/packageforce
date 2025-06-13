@@ -1,0 +1,100 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definitions -->
+  <defs>
+    <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E2E8F0;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cubeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  
+  <!-- Background in Salesforce Blue -->
+  <rect width="128" height="128" fill="#0176D3" rx="20"/>
+  
+  <!-- "Package" text (top) - using basic font -->
+  <text x="64" y="35" text-anchor="middle" 
+        font-family="serif" 
+        font-size="22" 
+        font-weight="normal" 
+        font-style="italic"
+        fill="#FFFFFF" 
+        stroke="none">Package</text>
+  
+  <!-- Icon group in center -->
+  <g transform="translate(64,64)">
+    
+    <!-- Simplified Cloud Icon (left) -->
+    <g transform="translate(-18,0)">
+      <path d="M-12,-2 C-12,-8 -8,-12 -4,-12 C-2,-14 2,-14 4,-12 C8,-14 12,-10 12,-6 C14,-6 16,-4 16,-2 C16,2 12,4 8,4 L-8,4 C-12,4 -12,0 -12,-2 Z" 
+            fill="#FFFFFF" 
+            stroke="none"/>
+    </g>
+    
+    <!-- Simplified Cube Icon (right) -->
+    <g transform="translate(18,0)">
+      <!-- Front face -->
+      <path d="M-8,-4 L0,-8 L8,-4 L8,4 L0,8 L-8,4 Z" 
+            fill="#F59E0B" 
+            stroke="none"/>
+      <!-- Top face -->
+      <path d="M-8,-4 L0,-8 L8,-4 L0,0 Z" 
+            fill="#FCD34D" 
+            stroke="none"/>
+      <!-- Right face -->
+      <path d="M8,-4 L8,4 L0,8 L0,0 Z" 
+            fill="#D97706" 
+            stroke="none"/>
+    </g>
+    
+  </g>
+  
+  <!-- "Force" text (bottom) - using basic font -->
+  <text x="64" y="93" text-anchor="middle" 
+        font-family="serif" 
+        font-size="22" 
+        font-weight="normal" 
+        font-style="italic"
+        fill="#FFFFFF" 
+        stroke="none">Force</text>
+  
+  <!-- Mini Action Icons in Footer -->
+  <g transform="translate(64,115)">
+    
+    <!-- Deploy Rocket -->
+    <g transform="translate(-30,0)">
+      <path d="M-2,-4 L0,-6 L2,-4 L2,-1 L3,1 L2,3 L2,4 L0,2 L-2,4 L-2,3 L-3,1 L-2,-1 Z" 
+            fill="#FFFFFF" stroke="none"/>
+      <!-- Rocket flames -->
+      <path d="M-1,4 L0,6 L1,4" stroke="#FCD34D" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+    </g>
+    
+    <!-- Test Checkmark -->
+    <g transform="translate(-10,0)">
+      <path d="M-3,-1 L-1,1 L3,-3" stroke="#FFFFFF" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    
+    <!-- Scan Magnifier -->
+    <g transform="translate(10,0)">
+      <circle cx="0" cy="-1" r="2.5" fill="none" stroke="#FFFFFF" stroke-width="1.2"/>
+      <path d="M2,1 L4,3" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round"/>
+    </g>
+    
+    <!-- Settings Gear -->
+    <g transform="translate(30,0)">
+      <circle cx="0" cy="0" r="3" fill="none" stroke="#FFFFFF" stroke-width="1.2"/>
+      <circle cx="0" cy="0" r="1.2" fill="#FFFFFF"/>
+      <!-- Gear teeth -->
+      <rect x="-0.6" y="-4.2" width="1.2" height="1.8" fill="#FFFFFF"/>
+      <rect x="-0.6" y="2.4" width="1.2" height="1.8" fill="#FFFFFF"/>
+      <rect x="2.4" y="-0.6" width="1.8" height="1.2" fill="#FFFFFF"/>
+      <rect x="-4.2" y="-0.6" width="1.8" height="1.2" fill="#FFFFFF"/>
+    </g>
+    
+  </g>
+</svg>

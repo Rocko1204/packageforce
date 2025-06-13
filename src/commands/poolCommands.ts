@@ -438,10 +438,10 @@ export async function listScratchOrgsInPool(): Promise<void> {
         
         // Also show quick pick for easy selection
         const quickPickItems = scratchOrgs.map(org => ({
-          label: `$(globe) ${org.Username}`,
-          description: `${org.Status} - Expires: ${new Date(org.ExpirationDate).toLocaleDateString()}`,
-          detail: org.Description || org.OrgName || 'No description',
-          username: org.Username
+          label: `$(globe) ${org.SignupUsername}`,
+          description: `Expires: ${new Date(org.ExpirationDate).toLocaleDateString()}`,
+          detail: 'No description',
+          username: org.SignupUsername
         }));
         
         const selected = await vscode.window.showQuickPick(quickPickItems, {

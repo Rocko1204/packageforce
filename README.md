@@ -1,7 +1,7 @@
 # Packageforce
 
-[![CI](https://github.com/yourusername/packageforce/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/packageforce/actions/workflows/ci.yml)
-[![Release](https://github.com/yourusername/packageforce/actions/workflows/release.yml/badge.svg)](https://github.com/yourusername/packageforce/actions/workflows/release.yml)
+[![CI](https://github.com/Rocko1204/packageforce/actions/workflows/ci.yml/badge.svg)](https://github.com/Rocko1204/packageforce/actions/workflows/ci.yml)
+[![Release](https://github.com/Rocko1204/packageforce/actions/workflows/release.yml/badge.svg)](https://github.com/Rocko1204/packageforce/actions/workflows/release.yml)
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/RonnyRokitta.packageforce)](https://marketplace.visualstudio.com/items?itemName=RonnyRokitta.packageforce)
 [![Downloads](https://img.shields.io/visual-studio-marketplace/d/RonnyRokitta.packageforce)](https://marketplace.visualstudio.com/items?itemName=RonnyRokitta.packageforce)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -19,7 +19,7 @@ Advanced Salesforce DevOps toolkit for package operations, deployments, testing,
 
 ### From GitHub Releases
 
-1. Go to [Releases](https://github.com/yourusername/packageforce/releases)
+1. Go to [Releases](https://github.com/Rocko1204/packageforce/releases)
 2. Download the latest `.vsix` file
 3. In VS Code, open Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
 4. Run "Extensions: Install from VSIX..."
@@ -29,7 +29,7 @@ Advanced Salesforce DevOps toolkit for package operations, deployments, testing,
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/packageforce.git
+git clone https://github.com/Rocko1204/packageforce.git
 cd packageforce
 
 # Install dependencies

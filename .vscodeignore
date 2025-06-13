@@ -1,14 +1,6 @@
 .vscode/**
 .vscode-test/**
 out/**
-node_modules/**
-!node_modules/@salesforce/core/**
-!node_modules/@salesforce/source-deploy-retrieve/**
-!node_modules/cli-table3/**
-!node_modules/unzipper/**
-!node_modules/simple-git/**
-!node_modules/semver/**
-!node_modules/markdown-table/**
 src/**
 .gitignore
 .yarnrc
@@ -35,3 +27,4 @@ package-lock.json
 *.log
 .env*
 .npmrc
+scratchorg/**

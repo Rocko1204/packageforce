@@ -18,15 +18,17 @@ let codeLensProvider: SfdxProjectCodeLensProvider;
 let packageExplorer: PackageExplorerProvider;
 
 export function activate(context: vscode.ExtensionContext) {
-  logger.info('Packageforce is activating...');
+  try {
+    console.log('Packageforce: Starting activation...');
+    logger.info('Packageforce is activating...');
 
-  // Register CodeLens Provider for sfdx-project.json
-  codeLensProvider = new SfdxProjectCodeLensProvider();
-  const codeLensDisposable = vscode.languages.registerCodeLensProvider(
-    { scheme: 'file', pattern: '**/sfdx-project.json' },
-    codeLensProvider
-  );
-  logger.info('CodeLens provider registered');
+    // Register CodeLens Provider for sfdx-project.json
+    codeLensProvider = new SfdxProjectCodeLensProvider();
+    const codeLensDisposable = vscode.languages.registerCodeLensProvider(
+      { scheme: 'file', pattern: '**/sfdx-project.json' },
+      codeLensProvider
+    );
+    logger.info('CodeLens provider registered');
 
   // Register test command
   const testCommand = vscode.commands.registerCommand(
@@ -42,16 +44,21 @@ export function activate(context: vscode.ExtensionContext) {
   // Register Package Explorer
   const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   if (workspaceRoot) {
-    packageExplorer = new PackageExplorerProvider(workspaceRoot);
-    const treeView = vscode.window.createTreeView('sfdxPackageExplorer', {
-      treeDataProvider: packageExplorer,
-      showCollapseAll: true
-    });
-    
-    // Register the tree view without trying to reveal it
-    context.subscriptions.push(treeView);
-    
-    logger.info('Package Explorer created');
+    try {
+      packageExplorer = new PackageExplorerProvider(workspaceRoot);
+      const treeView = vscode.window.createTreeView('sfdxPackageExplorer', {
+        treeDataProvider: packageExplorer,
+        showCollapseAll: true
+      });
+      logger.info('Package Explorer registered');
+      
+      // Register the tree view without trying to reveal it
+      context.subscriptions.push(treeView);
+      logger.info('Package Explorer created');
+    } catch (error) {
+      logger.error('Failed to create Package Explorer', error);
+      // Don't throw - extension can still work without tree view
+    }
   } else {
     logger.warn('No workspace folder found, Package Explorer not created');
   }
@@ -235,9 +242,18 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   logger.info('Packageforce activation complete');
-  vscode.window.showInformationMessage(
-    'Packageforce activated! Open sfdx-project.json to see actions. Find "Packageforce Packages" view in the Explorer sidebar.'
-  );
+  console.log('Packageforce: Activation complete');
+  
+  // Don't show activation message - it can block the extension
+  // Users will see the extension is active in the Extensions view
+  
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Packageforce: Activation failed', error);
+    logger.error('Activation failed', error);
+    vscode.window.showErrorMessage(`Packageforce activation failed: ${errorMessage}`);
+    throw error;
+  }
 }
 
 export function deactivate() {
