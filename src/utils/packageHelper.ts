@@ -39,8 +39,8 @@ export class PackageHelper {
       const projectContent = fs.readFileSync(this.sfdxProjectPath, 'utf8');
       const projectJson = JSON.parse(projectContent);
       this.packageDirectories = projectJson.packageDirectories || [];
-      logger.info('Loaded sfdx-project.json successfully', { 
-        packageCount: this.packageDirectories.length 
+      logger.info('Loaded sfdx-project.json successfully', {
+        packageCount: this.packageDirectories.length,
       });
     } catch (error) {
       logger.error('Failed to parse sfdx-project.json', error);
@@ -70,7 +70,7 @@ export class PackageHelper {
    * @returns Array of package dependencies in dependency order
    */
   public getPackageDependencies(
-    packageName: string, 
+    packageName: string,
     includeTransitive: boolean = true
   ): PackageInfo[] {
     const pkg = this.getPackageByName(packageName);
@@ -93,7 +93,7 @@ export class PackageHelper {
         }
 
         visited.add(dep.package);
-        
+
         // Find the package info for this dependency
         const depPkg = this.getPackageByName(dep.package);
         if (depPkg) {
@@ -102,7 +102,9 @@ export class PackageHelper {
           }
           dependencies.push(depPkg);
         } else {
-          logger.warn(`Dependency package not found in project: ${dep.package}`);
+          logger.warn(
+            `Dependency package not found in project: ${dep.package}`
+          );
         }
       }
     };
@@ -119,7 +121,7 @@ export class PackageHelper {
    * @returns Array of packages in deployment order
    */
   public getDeploymentOrder(
-    packageNames: string[], 
+    packageNames: string[],
     includeDependencies: boolean = true,
     startFrom?: string
   ): PackageInfo[] {
@@ -138,7 +140,7 @@ export class PackageHelper {
 
       visiting.add(pkgName);
       const pkg = this.getPackageByName(pkgName);
-      
+
       if (pkg?.dependencies) {
         for (const dep of pkg.dependencies) {
           if (hasCircularDependency(dep.package)) {
@@ -146,7 +148,7 @@ export class PackageHelper {
           }
         }
       }
-      
+
       visiting.delete(pkgName);
       visited.add(pkgName);
       return false;
@@ -188,11 +190,15 @@ export class PackageHelper {
 
     // If startFrom is specified, filter to start from that package
     if (startFrom) {
-      const startIndex = deploymentOrder.findIndex(pkg => pkg.package === startFrom);
+      const startIndex = deploymentOrder.findIndex(
+        pkg => pkg.package === startFrom
+      );
       if (startIndex !== -1) {
         return deploymentOrder.slice(startIndex);
       } else {
-        logger.warn(`Start package not found in deployment order: ${startFrom}`);
+        logger.warn(
+          `Start package not found in deployment order: ${startFrom}`
+        );
       }
     }
 
@@ -229,7 +235,7 @@ export class PackageHelper {
    * @returns Array of packages that depend on this package
    */
   public getDependentPackages(packageName: string): PackageInfo[] {
-    return this.packageDirectories.filter(pkg => 
+    return this.packageDirectories.filter(pkg =>
       pkg.dependencies?.some(dep => dep.package === packageName)
     );
   }

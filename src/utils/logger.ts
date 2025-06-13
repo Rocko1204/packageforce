@@ -40,9 +40,10 @@ export class Logger {
 
   public error(message: string, error?: Error | unknown, ...args: any[]): void {
     if (this.logLevel <= LogLevel.ERROR) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const stackTrace = error instanceof Error ? error.stack : '';
-      
+
       this.log('ERROR', message, errorMessage, stackTrace, ...args);
     }
   }
@@ -59,7 +60,7 @@ export class Logger {
     const timestamp = new Date().toISOString();
     const formattedMessage = this.formatMessage(message, ...args);
     const logEntry = `[${timestamp}] [${level}] ${formattedMessage}`;
-    
+
     this.outputChannel.appendLine(logEntry);
   }
 
@@ -92,7 +93,7 @@ export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
-  ERROR = 3
+  ERROR = 3,
 }
 
 // Export a singleton instance for convenience

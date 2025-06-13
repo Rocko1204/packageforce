@@ -1,7 +1,10 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { ScanResult, Violation } from '../services/scanService';
-import { DuplicateResult, Duplication } from '../services/duplicateDetectorService';
+import {
+  DuplicateResult,
+  Duplication,
+} from '../services/duplicateDetectorService';
 import { Logger } from './logger';
 
 const logger = Logger.getInstance();
@@ -27,7 +30,8 @@ export class ReportUtils {
       reportDir = path.dirname(reportDir);
     }
 
-    const baseFileName = reportType === 'scan' ? 'SCAN_RESULTS' : 'DUPLICATE_ANALYSIS';
+    const baseFileName =
+      reportType === 'scan' ? 'SCAN_RESULTS' : 'DUPLICATE_ANALYSIS';
     const extension = format === 'markdown' ? 'md' : format;
     const fileName = `${baseFileName}.${extension}`;
 
@@ -84,7 +88,11 @@ export class ReportUtils {
     packagePath: string,
     options: ReportOptions
   ): Promise<string> {
-    const filePath = this.getReportPath(packagePath, 'duplicate', options.format);
+    const filePath = this.getReportPath(
+      packagePath,
+      'duplicate',
+      options.format
+    );
     let content: string;
 
     switch (options.format) {
@@ -115,9 +123,12 @@ export class ReportUtils {
   /**
    * Generate markdown report for scan results
    */
-  private static generateScanMarkdown(result: ScanResult, options: ReportOptions): string {
+  private static generateScanMarkdown(
+    result: ScanResult,
+    options: ReportOptions
+  ): string {
     let md = `# Code Scan Results - ${result.packageName}\n\n`;
-    
+
     if (options.includeMetadata !== false) {
       md += `## Summary\n\n`;
       md += `- **Total Violations:** ${result.totalViolations}\n`;
@@ -147,13 +158,13 @@ export class ReportUtils {
       md += `### ${relativePath}\n\n`;
       md += '| Line | Priority | Rule | Message |\n';
       md += '|------|----------|------|----------|\n';
-      
+
       // Sort violations by line number
       violations.sort((a, b) => a.beginLine - b.beginLine);
-      
+
       for (const violation of violations) {
         const priority = this.getPriorityEmoji(violation.priority);
-        const line = violation.endLine 
+        const line = violation.endLine
           ? `${violation.beginLine}-${violation.endLine}`
           : `${violation.beginLine}`;
         md += `| ${line} | ${priority} ${violation.priority} | ${violation.rule} | ${violation.message} |\n`;
@@ -167,9 +178,12 @@ export class ReportUtils {
   /**
    * Generate markdown report for duplicate results
    */
-  private static generateDuplicateMarkdown(result: DuplicateResult, options: ReportOptions): string {
+  private static generateDuplicateMarkdown(
+    result: DuplicateResult,
+    options: ReportOptions
+  ): string {
     let md = `# Duplicate Code Analysis - ${result.packageName}\n\n`;
-    
+
     if (options.includeMetadata !== false) {
       md += `## Summary\n\n`;
       md += `- **Total Duplications:** ${result.totalDuplications}\n`;
@@ -191,21 +205,21 @@ export class ReportUtils {
       md += `### Duplication #${index + 1}\n\n`;
       md += `- **Size:** ${dup.lines} lines, ${dup.tokens} tokens\n`;
       md += `- **Found in ${dup.occurrences.length} locations:**\n\n`;
-      
+
       dup.occurrences.forEach((occ, occIndex) => {
         const fileName = path.basename(occ.file);
         const dirName = path.basename(path.dirname(occ.file));
         md += `  ${occIndex + 1}. \`${dirName}/${fileName}\`\n`;
         md += `     - Lines ${occ.startLine}-${occ.endLine}\n`;
       });
-      
+
       if (dup.occurrences[0]?.codeFragment) {
         md += `\n#### Code Fragment:\n\n`;
         md += '```apex\n';
         md += dup.occurrences[0].codeFragment;
         md += '\n```\n';
       }
-      
+
       md += '\n---\n\n';
     });
 
@@ -217,7 +231,9 @@ export class ReportUtils {
    */
   private static generatePMDXml(result: ScanResult): string {
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<pmd version="' + (result as any).pmdVersion || '7.0.0' + '" timestamp="' + result.timestamp.toISOString() + '">\n';
+    xml +=
+      '<pmd version="' + (result as any).pmdVersion ||
+      '7.0.0' + '" timestamp="' + result.timestamp.toISOString() + '">\n';
 
     // Group violations by file
     const violationsByFile = new Map<string, Violation[]>();
@@ -230,25 +246,30 @@ export class ReportUtils {
 
     for (const [file, violations] of violationsByFile) {
       xml += `  <file name="${this.escapeXml(file)}">\n`;
-      
+
       for (const violation of violations) {
         xml += '    <violation';
         xml += ` beginline="${violation.beginLine}"`;
         if (violation.endLine) xml += ` endline="${violation.endLine}"`;
-        if (violation.beginColumn) xml += ` begincolumn="${violation.beginColumn}"`;
+        if (violation.beginColumn)
+          xml += ` begincolumn="${violation.beginColumn}"`;
         if (violation.endColumn) xml += ` endcolumn="${violation.endColumn}"`;
         xml += ` rule="${this.escapeXml(violation.rule)}"`;
         xml += ` ruleset="${this.escapeXml(violation.ruleset)}"`;
         xml += ` priority="${violation.priority}"`;
-        if (violation.externalInfoUrl) xml += ` externalInfoUrl="${this.escapeXml(violation.externalInfoUrl)}"`;
-        if (violation.className) xml += ` class="${this.escapeXml(violation.className)}"`;
-        if (violation.methodName) xml += ` method="${this.escapeXml(violation.methodName)}"`;
-        if (violation.variableName) xml += ` variable="${this.escapeXml(violation.variableName)}"`;
+        if (violation.externalInfoUrl)
+          xml += ` externalInfoUrl="${this.escapeXml(violation.externalInfoUrl)}"`;
+        if (violation.className)
+          xml += ` class="${this.escapeXml(violation.className)}"`;
+        if (violation.methodName)
+          xml += ` method="${this.escapeXml(violation.methodName)}"`;
+        if (violation.variableName)
+          xml += ` variable="${this.escapeXml(violation.variableName)}"`;
         xml += '>\n';
         xml += `      ${this.escapeXml(violation.message)}\n`;
         xml += '    </violation>\n';
       }
-      
+
       xml += '  </file>\n';
     }
 
@@ -265,17 +286,17 @@ export class ReportUtils {
 
     for (const dup of result.duplications) {
       xml += `  <duplication lines="${dup.lines}" tokens="${dup.tokens}">\n`;
-      
+
       for (const occ of dup.occurrences) {
         xml += `    <file path="${this.escapeXml(occ.file)}" line="${occ.startLine}" endline="${occ.endLine}"/>\n`;
       }
-      
+
       if (dup.occurrences[0]?.codeFragment) {
         xml += '    <codefragment>\n';
         xml += `      <![CDATA[${dup.occurrences[0].codeFragment}]]>\n`;
         xml += '    </codefragment>\n';
       }
-      
+
       xml += '  </duplication>\n';
     }
 
@@ -287,9 +308,17 @@ export class ReportUtils {
    * Generate CSV format for scan results
    */
   private static generateScanCsv(result: ScanResult): string {
-    const headers = ['File', 'Line', 'End Line', 'Priority', 'Rule', 'Ruleset', 'Message'];
+    const headers = [
+      'File',
+      'Line',
+      'End Line',
+      'Priority',
+      'Rule',
+      'Ruleset',
+      'Message',
+    ];
     const rows = [headers.join(',')];
-    
+
     for (const violation of result.violations) {
       const row = [
         `"${violation.file}"`,
@@ -298,11 +327,11 @@ export class ReportUtils {
         violation.priority,
         `"${violation.rule}"`,
         `"${violation.ruleset}"`,
-        `"${violation.message.replace(/"/g, '""')}"`
+        `"${violation.message.replace(/"/g, '""')}"`,
       ];
       rows.push(row.join(','));
     }
-    
+
     return rows.join('\n');
   }
 
@@ -310,23 +339,30 @@ export class ReportUtils {
    * Generate CSV format for duplicate results
    */
   private static generateDuplicateCsv(result: DuplicateResult): string {
-    const headers = ['Duplication #', 'Lines', 'Tokens', 'File', 'Start Line', 'End Line'];
+    const headers = [
+      'Duplication #',
+      'Lines',
+      'Tokens',
+      'File',
+      'Start Line',
+      'End Line',
+    ];
     const rows = [headers.join(',')];
-    
+
     result.duplications.forEach((dup, dupIndex) => {
-      dup.occurrences.forEach((occ) => {
+      dup.occurrences.forEach(occ => {
         const row = [
           dupIndex + 1,
           dup.lines,
           dup.tokens,
           `"${occ.file}"`,
           occ.startLine,
-          occ.endLine
+          occ.endLine,
         ];
         rows.push(row.join(','));
       });
     });
-    
+
     return rows.join('\n');
   }
 
@@ -358,9 +394,9 @@ export class ReportUtils {
       const relativePath = path.relative(result.packagePath, file);
       text += `\nFile: ${relativePath}\n`;
       text += '-'.repeat(relativePath.length + 6) + '\n';
-      
+
       for (const violation of violations) {
-        const line = violation.endLine 
+        const line = violation.endLine
           ? `${violation.beginLine}-${violation.endLine}`
           : `${violation.beginLine}`;
         text += `  Line ${line}: [Priority ${violation.priority}] ${violation.rule}\n`;
@@ -393,15 +429,18 @@ export class ReportUtils {
       text += '-'.repeat(20) + '\n';
       text += `Size: ${dup.lines} lines, ${dup.tokens} tokens\n`;
       text += `Found in ${dup.occurrences.length} locations:\n`;
-      
+
       dup.occurrences.forEach((occ, occIndex) => {
         text += `  ${occIndex + 1}. ${occ.file}\n`;
         text += `     Lines ${occ.startLine}-${occ.endLine}\n`;
       });
-      
+
       if (dup.occurrences[0]?.codeFragment) {
         text += `\nCode Fragment:\n`;
-        text += dup.occurrences[0].codeFragment.split('\n').map(line => '  ' + line).join('\n');
+        text += dup.occurrences[0].codeFragment
+          .split('\n')
+          .map(line => '  ' + line)
+          .join('\n');
         text += '\n';
       }
     });
@@ -446,9 +485,10 @@ export class ReportUtils {
             <div class="summary-item"><strong>Scan Date:</strong> ${result.timestamp.toLocaleString()}</div>
             <div class="summary-item"><strong>Scan Duration:</strong> ${result.scanDuration}ms</div>
         </div>
-        ${result.totalViolations === 0 ? 
-          '<div class="no-violations">✅ No violations found!</div>' :
-          this.generateScanHtmlViolations(result)
+        ${
+          result.totalViolations === 0
+            ? '<div class="no-violations">✅ No violations found!</div>'
+            : this.generateScanHtmlViolations(result)
         }
     </div>
 </body>
@@ -471,15 +511,15 @@ export class ReportUtils {
       const relativePath = path.relative(result.packagePath, file);
       html += `<div class="file-section">`;
       html += `<div class="file-header">${relativePath} (${violations.length} violations)</div>`;
-      
+
       // Sort by line number
       violations.sort((a, b) => a.beginLine - b.beginLine);
-      
+
       for (const violation of violations) {
-        const line = violation.endLine 
+        const line = violation.endLine
           ? `${violation.beginLine}-${violation.endLine}`
           : `${violation.beginLine}`;
-        
+
         html += `<div class="violation priority-${violation.priority}">`;
         html += `<div class="violation-header">`;
         html += `<span class="violation-location">Line ${line}</span>`;
@@ -490,7 +530,7 @@ export class ReportUtils {
       }
       html += `</div>`;
     }
-    
+
     return html;
   }
 
@@ -500,36 +540,40 @@ export class ReportUtils {
   private static generateScanSarif(result: ScanResult): string {
     const sarif = {
       version: '2.1.0',
-      runs: [{
-        tool: {
-          driver: {
-            name: 'PMD',
-            informationUri: 'https://pmd.github.io/',
-            version: '7.0.0',
-            rules: this.extractRules(result.violations)
-          }
-        },
-        results: result.violations.map(violation => ({
-          ruleId: violation.rule,
-          level: this.getPrioritySarifLevel(violation.priority),
-          message: {
-            text: violation.message
+      runs: [
+        {
+          tool: {
+            driver: {
+              name: 'PMD',
+              informationUri: 'https://pmd.github.io/',
+              version: '7.0.0',
+              rules: this.extractRules(result.violations),
+            },
           },
-          locations: [{
-            physicalLocation: {
-              artifactLocation: {
-                uri: violation.file
+          results: result.violations.map(violation => ({
+            ruleId: violation.rule,
+            level: this.getPrioritySarifLevel(violation.priority),
+            message: {
+              text: violation.message,
+            },
+            locations: [
+              {
+                physicalLocation: {
+                  artifactLocation: {
+                    uri: violation.file,
+                  },
+                  region: {
+                    startLine: violation.beginLine,
+                    endLine: violation.endLine || violation.beginLine,
+                    startColumn: violation.beginColumn,
+                    endColumn: violation.endColumn,
+                  },
+                },
               },
-              region: {
-                startLine: violation.beginLine,
-                endLine: violation.endLine || violation.beginLine,
-                startColumn: violation.beginColumn,
-                endColumn: violation.endColumn
-              }
-            }
-          }]
-        }))
-      }]
+            ],
+          })),
+        },
+      ],
     };
 
     return JSON.stringify(sarif, null, 2);
@@ -537,7 +581,7 @@ export class ReportUtils {
 
   private static extractRules(violations: Violation[]): any[] {
     const rulesMap = new Map<string, any>();
-    
+
     for (const violation of violations) {
       if (!rulesMap.has(violation.rule)) {
         rulesMap.set(violation.rule, {
@@ -545,12 +589,12 @@ export class ReportUtils {
           name: violation.rule,
           helpUri: violation.externalInfoUrl || undefined,
           properties: {
-            category: violation.ruleset
-          }
+            category: violation.ruleset,
+          },
         });
       }
     }
-    
+
     return Array.from(rulesMap.values());
   }
 
@@ -571,12 +615,18 @@ export class ReportUtils {
 
   private static getPriorityEmoji(priority: number): string {
     switch (priority) {
-      case 1: return '🔴';
-      case 2: return '🟠';
-      case 3: return '🟡';
-      case 4: return '🔵';
-      case 5: return '⚪';
-      default: return '⚫';
+      case 1:
+        return '🔴';
+      case 2:
+        return '🟠';
+      case 3:
+        return '🟡';
+      case 4:
+        return '🔵';
+      case 5:
+        return '⚪';
+      default:
+        return '⚫';
     }
   }
 
@@ -595,7 +645,7 @@ export class ReportUtils {
       '<': '&lt;',
       '>': '&gt;',
       '"': '&quot;',
-      "'": '&#39;'
+      "'": '&#39;',
     };
     return text.replace(/[&<>"']/g, m => map[m]);
   }

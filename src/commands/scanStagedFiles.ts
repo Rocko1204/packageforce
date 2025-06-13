@@ -33,49 +33,62 @@ export async function scanStagedFiles() {
     const analyzableFiles = stagedFiles.filter(file => {
       // Apex files
       if (file.endsWith('.cls') || file.endsWith('.trigger')) return true;
-      
+
       // Visualforce files
       if (file.endsWith('.page') || file.endsWith('.component')) return true;
-      
+
       // Lightning Web Components
       if (file.endsWith('.js') && file.includes('/lwc/')) return true;
       if (file.endsWith('.html') && file.includes('/lwc/')) return true;
-      
+
       // Aura Components
-      if (file.endsWith('.cmp') || file.endsWith('.evt') || file.endsWith('.app')) return true;
+      if (
+        file.endsWith('.cmp') ||
+        file.endsWith('.evt') ||
+        file.endsWith('.app')
+      )
+        return true;
       if (file.endsWith('.js') && file.includes('/aura/')) return true;
-      
+
       // Metadata files (for custom rules like empty descriptions)
-      if (file.endsWith('.object-meta.xml') || file.endsWith('.field-meta.xml')) return true;
+      if (file.endsWith('.object-meta.xml') || file.endsWith('.field-meta.xml'))
+        return true;
       if (file.endsWith('.flow-meta.xml')) return true;
       if (file.endsWith('.permissionset-meta.xml')) return true;
       if (file.endsWith('.profile-meta.xml')) return true;
-      
+
       // Configuration files
-      if (file.endsWith('.xml') && (
-        file.includes('/objects/') || 
-        file.includes('/fields/') ||
-        file.includes('/flows/') ||
-        file.includes('/classes/') ||
-        file.includes('/triggers/')
-      )) return true;
-      
+      if (
+        file.endsWith('.xml') &&
+        (file.includes('/objects/') ||
+          file.includes('/fields/') ||
+          file.includes('/flows/') ||
+          file.includes('/classes/') ||
+          file.includes('/triggers/'))
+      )
+        return true;
+
       return false;
     });
 
     if (analyzableFiles.length === 0) {
-      vscode.window.showInformationMessage('No analyzable files in staged changes');
+      vscode.window.showInformationMessage(
+        'No analyzable files in staged changes'
+      );
       return;
     }
 
     // Show scan options
-    const scanOption = await vscode.window.showQuickPick([
-      { label: '$(search) Quick Scan (Default Rules)', value: 'quick' },
-      { label: '$(checklist) Full Scan (All Rules)', value: 'full' },
-      { label: '$(folder) Scan with Custom Rules', value: 'custom-rules' }
-    ], {
-      placeHolder: `Select scan option for ${analyzableFiles.length} staged file${analyzableFiles.length === 1 ? '' : 's'}`
-    });
+    const scanOption = await vscode.window.showQuickPick(
+      [
+        { label: '$(search) Quick Scan (Default Rules)', value: 'quick' },
+        { label: '$(checklist) Full Scan (All Rules)', value: 'full' },
+        { label: '$(folder) Scan with Custom Rules', value: 'custom-rules' },
+      ],
+      {
+        placeHolder: `Select scan option for ${analyzableFiles.length} staged file${analyzableFiles.length === 1 ? '' : 's'}`,
+      }
+    );
 
     if (!scanOption) {
       return;
@@ -88,7 +101,9 @@ export async function scanStagedFiles() {
       packageName: 'Staged Files',
       format: 'xml',
       cache: false,
-      fileList: analyzableFiles.map(file => path.join(workspaceFolder.uri.fsPath, file))
+      fileList: analyzableFiles.map(file =>
+        path.join(workspaceFolder.uri.fsPath, file)
+      ),
     };
 
     // Configure based on scan option
@@ -97,7 +112,7 @@ export async function scanStagedFiles() {
         scanOptions.rulesets = [
           'category/apex/bestpractices.xml',
           'category/apex/errorprone.xml',
-          'category/apex/security.xml'
+          'category/apex/security.xml',
         ];
         scanOptions.minimumPriority = 3;
         // Always include custom rules for metadata files
@@ -122,7 +137,9 @@ export async function scanStagedFiles() {
     }
 
     // Create diagnostic collection
-    const diagnostics = vscode.languages.createDiagnosticCollection('packageforce.scanner.staged');
+    const diagnostics = vscode.languages.createDiagnosticCollection(
+      'packageforce.scanner.staged'
+    );
 
     // Run scan with progress
     await vscode.window.withProgress(
@@ -139,14 +156,20 @@ export async function scanStagedFiles() {
             return;
           }
 
-          progress.report({ increment: 20, message: 'Loading configuration...' });
+          progress.report({
+            increment: 20,
+            message: 'Loading configuration...',
+          });
           await scanService.loadWorkspaceConfiguration();
 
           if (token.isCancellationRequested) {
             return;
           }
 
-          progress.report({ increment: 40, message: 'Running static analysis...' });
+          progress.report({
+            increment: 40,
+            message: 'Running static analysis...',
+          });
           const result = await scanService.scanPackage(scanOptions);
 
           if (token.isCancellationRequested) {
@@ -155,7 +178,7 @@ export async function scanStagedFiles() {
           }
 
           progress.report({ increment: 80, message: 'Processing results...' });
-          
+
           // Update diagnostics
           const scanDiagnostics = scanService.createDiagnostics(result);
           diagnostics.clear();
@@ -166,9 +189,10 @@ export async function scanStagedFiles() {
           progress.report({ increment: 100, message: 'Analysis complete!' });
 
           // Show summary
-          const violationSummary = result.totalViolations === 0 
-            ? 'No violations found!' 
-            : `Found ${result.totalViolations} violation${result.totalViolations === 1 ? '' : 's'}`;
+          const violationSummary =
+            result.totalViolations === 0
+              ? 'No violations found!'
+              : `Found ${result.totalViolations} violation${result.totalViolations === 1 ? '' : 's'}`;
 
           const filesSummary = `in ${analyzableFiles.length} staged file${analyzableFiles.length === 1 ? '' : 's'}`;
 
@@ -180,10 +204,10 @@ export async function scanStagedFiles() {
           if (action === 'View Output') {
             scanService.outputChannel.show();
           }
-
         } catch (error) {
           diagnostics.dispose();
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
           logger.error(`Scan failed for staged files:`, error);
           vscode.window.showErrorMessage(`Scan failed: ${errorMessage}`);
         }

@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { FailedComponent, DeploymentResult, DeploymentError } from './deployTypes';
+import {
+  FailedComponent,
+  DeploymentResult,
+  DeploymentError,
+} from './deployTypes';
 import { logger } from './logger';
 
 export class ErrorHandler {
@@ -8,7 +12,8 @@ export class ErrorHandler {
   private diagnosticCollection: vscode.DiagnosticCollection;
 
   private constructor() {
-    this.diagnosticCollection = vscode.languages.createDiagnosticCollection('sfdx-deploy');
+    this.diagnosticCollection =
+      vscode.languages.createDiagnosticCollection('sfdx-deploy');
   }
 
   public static getInstance(): ErrorHandler {
@@ -24,7 +29,7 @@ export class ErrorHandler {
    * @param packageName The name of the package being deployed
    */
   public async handleDeploymentError(
-    error: DeploymentError | Error, 
+    error: DeploymentError | Error,
     packageName: string
   ): Promise<void> {
     logger.error(`Deployment failed for package: ${packageName}`, error);
@@ -57,7 +62,7 @@ export class ErrorHandler {
    * @param packageName The name of the package deployed
    */
   public async processDeploymentResult(
-    result: DeploymentResult, 
+    result: DeploymentResult,
     packageName: string
   ): Promise<void> {
     // Clear previous diagnostics
@@ -67,7 +72,7 @@ export class ErrorHandler {
       // Process failed components
       if (result.failedComponents && result.failedComponents.length > 0) {
         this.processComponentErrors(result.failedComponents);
-        
+
         const action = await vscode.window.showErrorMessage(
           `Deployment failed for "${packageName}": ${result.failedComponents.length} component(s) failed.`,
           'Show Problems',
@@ -83,8 +88,11 @@ export class ErrorHandler {
     } else {
       // Process warnings if any
       if (result.warnings && result.warnings.length > 0) {
-        logger.warn(`Deployment succeeded with warnings for "${packageName}"`, result.warnings);
-        
+        logger.warn(
+          `Deployment succeeded with warnings for "${packageName}"`,
+          result.warnings
+        );
+
         const action = await vscode.window.showWarningMessage(
           `Deployment succeeded with ${result.warnings.length} warning(s) for "${packageName}".`,
           'Show Warnings',
@@ -147,7 +155,7 @@ export class ErrorHandler {
   private createDiagnostic(component: FailedComponent): vscode.Diagnostic {
     const line = (component.lineNumber || 1) - 1;
     const column = (component.columnNumber || 1) - 1;
-    
+
     const range = new vscode.Range(
       new vscode.Position(line, column),
       new vscode.Position(line, column + 1)
@@ -201,7 +209,7 @@ export class ErrorHandler {
     const autoFixableTypes = [
       'MISSING_SEMICOLON',
       'UNUSED_VARIABLE',
-      'MISSING_FIELD_DESCRIPTION'
+      'MISSING_FIELD_DESCRIPTION',
     ];
 
     return autoFixableTypes.includes(component.problemType);
@@ -215,12 +223,12 @@ export class ErrorHandler {
     const items = warnings.map(warning => ({
       label: warning.fullName || 'Unknown',
       description: warning.type || '',
-      detail: warning.warning || warning.message || 'No details available'
+      detail: warning.warning || warning.message || 'No details available',
     }));
 
     const selected = await vscode.window.showQuickPick(items, {
       placeHolder: 'Select a warning to view details',
-      canPickMany: false
+      canPickMany: false,
     });
 
     if (selected) {
@@ -242,7 +250,9 @@ export class ErrorHandler {
     if (testResult.testFailures && testResult.testFailures.length > 0) {
       logger.error('Test Failures:');
       for (const failure of testResult.testFailures) {
-        logger.error(`  ${failure.name}.${failure.methodName}: ${failure.message}`);
+        logger.error(
+          `  ${failure.name}.${failure.methodName}: ${failure.message}`
+        );
         if (failure.stackTrace) {
           logger.error(`    Stack: ${failure.stackTrace}`);
         }
@@ -253,7 +263,9 @@ export class ErrorHandler {
       logger.info('Code Coverage:');
       for (const coverage of testResult.codeCoverage) {
         const percentage = Math.round(coverage.coverage * 100) / 100;
-        logger.info(`  ${coverage.name}: ${percentage}% (${coverage.numLocations - coverage.numLocationsNotCovered}/${coverage.numLocations})`);
+        logger.info(
+          `  ${coverage.name}: ${percentage}% (${coverage.numLocations - coverage.numLocationsNotCovered}/${coverage.numLocations})`
+        );
       }
     }
   }

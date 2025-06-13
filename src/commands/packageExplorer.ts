@@ -12,9 +12,15 @@ interface PackageInfo {
   packageType?: 'unlocked' | 'data' | 'diff' | 'source';
 }
 
-export class PackageExplorerProvider implements vscode.TreeDataProvider<PackageItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<PackageItem | undefined | null | void> = new vscode.EventEmitter<PackageItem | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<PackageItem | undefined | null | void> = this._onDidChangeTreeData.event;
+export class PackageExplorerProvider
+  implements vscode.TreeDataProvider<PackageItem>
+{
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    PackageItem | undefined | null | void
+  > = new vscode.EventEmitter<PackageItem | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<
+    PackageItem | undefined | null | void
+  > = this._onDidChangeTreeData.event;
 
   private packages: PackageInfo[] = [];
   private workspaceRoot: string;
@@ -31,7 +37,7 @@ export class PackageExplorerProvider implements vscode.TreeDataProvider<PackageI
 
   private loadPackages(): void {
     const sfdxProjectPath = path.join(this.workspaceRoot, 'sfdx-project.json');
-    
+
     if (!fs.existsSync(sfdxProjectPath)) {
       this.packages = [];
       return;
@@ -40,28 +46,34 @@ export class PackageExplorerProvider implements vscode.TreeDataProvider<PackageI
     try {
       const content = fs.readFileSync(sfdxProjectPath, 'utf8');
       const projectJson = JSON.parse(content);
-      
+
       this.packages = [];
-      
-      if (projectJson.packageDirectories && Array.isArray(projectJson.packageDirectories)) {
+
+      if (
+        projectJson.packageDirectories &&
+        Array.isArray(projectJson.packageDirectories)
+      ) {
         projectJson.packageDirectories.forEach((dir: any, index: number) => {
           if (dir.package) {
             // Find line number by searching for the package name
             const lines = content.split('\n');
             let lineNumber = 0;
-            
+
             for (let i = 0; i < lines.length; i++) {
               if (lines[i].includes(`"package": "${dir.package}"`)) {
                 lineNumber = i + 1;
                 break;
               }
             }
-            
+
             // Determine package type
             let packageType: 'unlocked' | 'data' | 'diff' | 'source' = 'source';
-            
+
             // Check if it's an unlocked package (has an alias in packageAliases)
-            if (projectJson.packageAliases && projectJson.packageAliases[dir.package]) {
+            if (
+              projectJson.packageAliases &&
+              projectJson.packageAliases[dir.package]
+            ) {
               packageType = 'unlocked';
             }
             // Check if it has a type property
@@ -72,7 +84,7 @@ export class PackageExplorerProvider implements vscode.TreeDataProvider<PackageI
                 packageType = 'diff';
               }
             }
-            
+
             this.packages.push({
               name: dir.package,
               path: dir.path,
@@ -80,15 +92,14 @@ export class PackageExplorerProvider implements vscode.TreeDataProvider<PackageI
               versionNumber: dir.versionNumber,
               dependencies: dir.dependencies,
               type: dir.type,
-              packageType: packageType
+              packageType: packageType,
             });
           }
         });
       }
-      
+
       // Sort packages alphabetically
       this.packages.sort((a, b) => a.name.localeCompare(b.name));
-      
     } catch (error) {
       console.error('Error loading sfdx-project.json:', error);
       vscode.window.showErrorMessage(`Error loading packages: ${error}`);
@@ -110,19 +121,24 @@ export class PackageExplorerProvider implements vscode.TreeDataProvider<PackageI
       return Promise.resolve([]);
     } else {
       // Return root level packages
-      return Promise.resolve(this.packages.map(pkg => new PackageItem(
-        pkg.name,
-        pkg.path,
-        pkg.lineNumber,
-        pkg.packageType || 'source',
-        pkg.versionNumber,
-        vscode.TreeItemCollapsibleState.None
-      )));
+      return Promise.resolve(
+        this.packages.map(
+          pkg =>
+            new PackageItem(
+              pkg.name,
+              pkg.path,
+              pkg.lineNumber,
+              pkg.packageType || 'source',
+              pkg.versionNumber,
+              vscode.TreeItemCollapsibleState.None
+            )
+        )
+      );
     }
   }
 
   findPackage(searchTerm: string): PackageInfo | undefined {
-    return this.packages.find(pkg => 
+    return this.packages.find(pkg =>
       pkg.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
@@ -142,14 +158,15 @@ export class PackageItem extends vscode.TreeItem {
     public readonly collapsibleState?: vscode.TreeItemCollapsibleState
   ) {
     super(label, collapsibleState);
-    
+
     // Set tooltip and description based on package type
-    const typeLabel = packageType.charAt(0).toUpperCase() + packageType.slice(1);
+    const typeLabel =
+      packageType.charAt(0).toUpperCase() + packageType.slice(1);
     this.tooltip = `${this.label} (${typeLabel} Package)`;
     this.description = typeLabel;
-    
+
     this.contextValue = 'packageItem';
-    
+
     // Set icon based on package type
     switch (packageType) {
       case 'unlocked':
@@ -166,12 +183,12 @@ export class PackageItem extends vscode.TreeItem {
         this.iconPath = new vscode.ThemeIcon('package');
         break;
     }
-    
+
     // Add command to handle click
     this.command = {
       command: 'sfdxPkgMgr.packageItemClicked',
       title: 'Package Clicked',
-      arguments: [this]
+      arguments: [this],
     };
   }
 }
@@ -187,14 +204,18 @@ export async function showPackageQuickPick() {
   const packages = provider.getAllPackages();
 
   if (packages.length === 0) {
-    vscode.window.showInformationMessage('No packages found in sfdx-project.json');
+    vscode.window.showInformationMessage(
+      'No packages found in sfdx-project.json'
+    );
     return;
   }
 
   const quickPickItems = packages.map(pkg => {
-    const typeLabel = pkg.packageType ? pkg.packageType.charAt(0).toUpperCase() + pkg.packageType.slice(1) : 'Source';
+    const typeLabel = pkg.packageType
+      ? pkg.packageType.charAt(0).toUpperCase() + pkg.packageType.slice(1)
+      : 'Source';
     let icon = '$(package)';
-    
+
     switch (pkg.packageType) {
       case 'unlocked':
         icon = '$(lock)';
@@ -206,19 +227,19 @@ export async function showPackageQuickPick() {
         icon = '$(diff)';
         break;
     }
-    
+
     return {
       label: `${icon} ${pkg.name}`,
       description: typeLabel,
       detail: `Path: ${pkg.path} • Line: ${pkg.lineNumber}`,
-      package: pkg
+      package: pkg,
     };
   });
 
   const selected = await vscode.window.showQuickPick(quickPickItems, {
     placeHolder: 'Select a package to perform actions',
     matchOnDescription: true,
-    matchOnDetail: true
+    matchOnDetail: true,
   });
 
   if (!selected) {
@@ -230,11 +251,11 @@ export async function showPackageQuickPick() {
     { label: '$(beaker) Test Package', action: 'test' },
     { label: '$(search) Scan Package', action: 'scan' },
     { label: '$(file-text) Go to Definition', action: 'goto' },
-    { label: '$(copy) Copy Package Name', action: 'copy' }
+    { label: '$(copy) Copy Package Name', action: 'copy' },
   ];
 
   const selectedAction = await vscode.window.showQuickPick(actions, {
-    placeHolder: `Select action for ${selected.package.name}`
+    placeHolder: `Select action for ${selected.package.name}`,
   });
 
   if (!selectedAction) {
@@ -246,34 +267,42 @@ export async function showPackageQuickPick() {
       vscode.commands.executeCommand('sfdxPkgMgr.deployPackageFromCodeLens', {
         package: selected.package.name,
         path: selected.package.path,
-        fromLine: selected.package.lineNumber
+        fromLine: selected.package.lineNumber,
       });
       break;
     case 'test':
       vscode.commands.executeCommand('sfdxPkgMgr.testPackageFromCodeLens', {
         package: selected.package.name,
         path: selected.package.path,
-        fromLine: selected.package.lineNumber
+        fromLine: selected.package.lineNumber,
       });
       break;
     case 'scan':
       vscode.commands.executeCommand('sfdxPkgMgr.scanPackageFromCodeLens', {
         package: selected.package.name,
         path: selected.package.path,
-        fromLine: selected.package.lineNumber
+        fromLine: selected.package.lineNumber,
       });
       break;
     case 'goto':
-      const sfdxPath = path.join(workspaceFolder.uri.fsPath, 'sfdx-project.json');
+      const sfdxPath = path.join(
+        workspaceFolder.uri.fsPath,
+        'sfdx-project.json'
+      );
       const doc = await vscode.workspace.openTextDocument(sfdxPath);
       const editor = await vscode.window.showTextDocument(doc);
       const position = new vscode.Position(selected.package.lineNumber - 1, 0);
       editor.selection = new vscode.Selection(position, position);
-      editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+      editor.revealRange(
+        new vscode.Range(position, position),
+        vscode.TextEditorRevealType.InCenter
+      );
       break;
     case 'copy':
       await vscode.env.clipboard.writeText(selected.package.name);
-      vscode.window.showInformationMessage(`Copied "${selected.package.name}" to clipboard`);
+      vscode.window.showInformationMessage(
+        `Copied "${selected.package.name}" to clipboard`
+      );
       break;
   }
 }

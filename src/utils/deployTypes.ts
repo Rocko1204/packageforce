@@ -4,7 +4,7 @@ export enum ComponentStatus {
   Changed = 'Changed',
   Unchanged = 'Unchanged',
   Deleted = 'Deleted',
-  Failed = 'Failed'
+  Failed = 'Failed',
 }
 
 // File response type
@@ -38,7 +38,7 @@ export enum TestLevel {
   NoTestRun = 'NoTestRun',
   RunSpecifiedTests = 'RunSpecifiedTests',
   RunLocalTests = 'RunLocalTests',
-  RunAllTestsInOrg = 'RunAllTestsInOrg'
+  RunAllTestsInOrg = 'RunAllTestsInOrg',
 }
 
 export interface DeploymentResult {
@@ -145,7 +145,7 @@ export enum DeploymentStatus {
   Deploying = 'deploying',
   Succeeded = 'succeeded',
   Failed = 'failed',
-  Canceled = 'canceled'
+  Canceled = 'canceled',
 }
 
 export interface DeploymentError extends Error {

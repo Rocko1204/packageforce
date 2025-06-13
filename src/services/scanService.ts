@@ -70,10 +70,13 @@ export class ScanService {
   public readonly outputChannel: vscode.OutputChannel;
   private pmdConfig: PMDConfiguration;
   private readonly PMD_VERSION = '7.8.0';
-  private readonly PMD_DOWNLOAD_BASE = 'https://github.com/pmd/pmd/releases/download';
+  private readonly PMD_DOWNLOAD_BASE =
+    'https://github.com/pmd/pmd/releases/download';
 
   private constructor() {
-    this.outputChannel = vscode.window.createOutputChannel('Packageforce - Code Scanner');
+    this.outputChannel = vscode.window.createOutputChannel(
+      'Packageforce - Code Scanner'
+    );
     this.pmdConfig = this.getDefaultPMDConfig();
   }
 
@@ -87,16 +90,20 @@ export class ScanService {
   private getDefaultPMDConfig(): PMDConfiguration {
     const homeDir = os.homedir();
     const baseInstallPath = path.join(homeDir, '.packageforce', 'pmd');
-    const installPath = path.join(baseInstallPath, `pmd-bin-${this.PMD_VERSION}`);
+    const installPath = path.join(
+      baseInstallPath,
+      `pmd-bin-${this.PMD_VERSION}`
+    );
     const pmdBinDir = path.join(installPath, 'bin');
-    
+
     return {
       version: this.PMD_VERSION,
       downloadUrl: `${this.PMD_DOWNLOAD_BASE}/pmd_releases%2F${this.PMD_VERSION}/pmd-dist-${this.PMD_VERSION}-bin.zip`,
       installPath: installPath,
-      executablePath: os.platform() === 'win32' 
-        ? path.join(pmdBinDir, 'pmd.bat')
-        : path.join(pmdBinDir, 'pmd')
+      executablePath:
+        os.platform() === 'win32'
+          ? path.join(pmdBinDir, 'pmd.bat')
+          : path.join(pmdBinDir, 'pmd'),
     };
   }
 
@@ -107,7 +114,9 @@ export class ScanService {
     const startTime = Date.now();
     logger.info(`Starting PMD scan for package: ${options.packageName}`);
     this.outputChannel.show(true); // Show output channel and preserve focus
-    this.outputChannel.appendLine(`\n=== Scanning package: ${options.packageName} ===`);
+    this.outputChannel.appendLine(
+      `\n=== Scanning package: ${options.packageName} ===`
+    );
     this.outputChannel.appendLine(`Path: ${options.packagePath}`);
     this.outputChannel.appendLine(`Timestamp: ${new Date().toISOString()}\n`);
 
@@ -122,7 +131,10 @@ export class ScanService {
       const pmdOutput = await this.runPMD(options, rulesetPaths);
 
       // Parse results
-      const violations = await this.parsePMDOutput(pmdOutput, options.format || 'xml');
+      const violations = await this.parsePMDOutput(
+        pmdOutput,
+        options.format || 'xml'
+      );
 
       // Calculate scan duration
       const scanDuration = Date.now() - startTime;
@@ -135,7 +147,7 @@ export class ScanService {
         violations: violations,
         errors: [],
         scanDuration: scanDuration,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Display results in output channel
@@ -150,17 +162,21 @@ export class ScanService {
         );
       }
 
-      logger.info(`PMD scan completed for ${options.packageName}. Found ${violations.length} violations in ${scanDuration}ms`);
+      logger.info(
+        `PMD scan completed for ${options.packageName}. Found ${violations.length} violations in ${scanDuration}ms`
+      );
 
       return result;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`PMD scan failed for ${options.packageName}:`, error);
-      
+
       this.outputChannel.appendLine(`\n❌ Scan failed: ${errorMessage}`);
-      
-      throw new Error(`Scan failed for package ${options.packageName}: ${errorMessage}`);
+
+      throw new Error(
+        `Scan failed for package ${options.packageName}: ${errorMessage}`
+      );
     }
   }
 
@@ -191,7 +207,10 @@ export class ScanService {
    */
   private async isPMDInstalled(): Promise<boolean> {
     try {
-      await fs.promises.access(this.pmdConfig.executablePath, fs.constants.X_OK);
+      await fs.promises.access(
+        this.pmdConfig.executablePath,
+        fs.constants.X_OK
+      );
       return true;
     } catch {
       return false;
@@ -211,7 +230,9 @@ export class ScanService {
       await fs.promises.mkdir(this.pmdConfig.installPath, { recursive: true });
 
       // Download PMD
-      this.outputChannel.appendLine(`Downloading PMD ${this.pmdConfig.version}...`);
+      this.outputChannel.appendLine(
+        `Downloading PMD ${this.pmdConfig.version}...`
+      );
       await this.downloadFile(this.pmdConfig.downloadUrl, zipPath);
 
       // Extract PMD to parent directory (the zip contains pmd-bin-VERSION folder)
@@ -226,9 +247,9 @@ export class ScanService {
 
       this.outputChannel.appendLine('✅ PMD installed successfully');
       logger.info('PMD installed successfully');
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to install PMD: ${errorMessage}`);
     } finally {
       // Cleanup
@@ -246,37 +267,43 @@ export class ScanService {
   private async downloadFile(url: string, destination: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const file = fs.createWriteStream(destination);
-      
-      https.get(url, (response) => {
-        if (response.statusCode === 302 || response.statusCode === 301) {
-          // Handle redirect
-          const redirectUrl = response.headers.location;
-          if (redirectUrl) {
+
+      https
+        .get(url, response => {
+          if (response.statusCode === 302 || response.statusCode === 301) {
+            // Handle redirect
+            const redirectUrl = response.headers.location;
+            if (redirectUrl) {
+              file.close();
+              this.downloadFile(redirectUrl, destination)
+                .then(resolve)
+                .catch(reject);
+              return;
+            }
+          }
+
+          if (response.statusCode !== 200) {
             file.close();
-            this.downloadFile(redirectUrl, destination).then(resolve).catch(reject);
+            reject(
+              new Error(`Failed to download: HTTP ${response.statusCode}`)
+            );
             return;
           }
-        }
 
-        if (response.statusCode !== 200) {
-          file.close();
-          reject(new Error(`Failed to download: HTTP ${response.statusCode}`));
-          return;
-        }
+          response.pipe(file);
 
-        response.pipe(file);
-        
-        file.on('finish', () => {
+          file.on('finish', () => {
+            file.close();
+            resolve();
+          });
+        })
+        .on('error', error => {
           file.close();
-          resolve();
+          fs.unlinkSync(destination);
+          reject(error);
         });
-      }).on('error', (error) => {
-        file.close();
-        fs.unlinkSync(destination);
-        reject(error);
-      });
 
-      file.on('error', (error) => {
+      file.on('error', error => {
         file.close();
         fs.unlinkSync(destination);
         reject(error);
@@ -287,7 +314,10 @@ export class ScanService {
   /**
    * Extract a zip file
    */
-  private async extractZip(zipPath: string, destination: string): Promise<void> {
+  private async extractZip(
+    zipPath: string,
+    destination: string
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       fs.createReadStream(zipPath)
         .pipe(unzipper.Extract({ path: destination }))
@@ -318,10 +348,13 @@ export class ScanService {
       );
 
       // Add Visualforce rules if we might have VF files
-      if (!options.fileList || options.fileList.some(f => f.endsWith('.page') || f.endsWith('.component'))) {
-        rulesets.push(
-          'category/visualforce/security.xml'
-        );
+      if (
+        !options.fileList ||
+        options.fileList.some(
+          f => f.endsWith('.page') || f.endsWith('.component')
+        )
+      ) {
+        rulesets.push('category/visualforce/security.xml');
       }
 
       // Note: XML rules will be applied through custom rules for metadata files
@@ -344,12 +377,12 @@ export class ScanService {
 
     try {
       const files = await fs.promises.readdir(rulesPath);
-      
+
       for (const file of files) {
         if (file.endsWith('.xml')) {
           const fullPath = path.join(rulesPath, file);
           const stats = await fs.promises.stat(fullPath);
-          
+
           if (stats.isFile()) {
             customRules.push(fullPath);
             logger.debug(`Found custom rule file: ${fullPath}`);
@@ -359,7 +392,6 @@ export class ScanService {
 
       logger.info(`Loaded ${customRules.length} custom rule files`);
       return customRules;
-
     } catch (error) {
       logger.warn(`Failed to load custom rules from ${rulesPath}:`, error);
       return [];
@@ -369,32 +401,47 @@ export class ScanService {
   /**
    * Run PMD command
    */
-  private async runPMD(options: ScanOptions, rulesets: string[]): Promise<string> {
+  private async runPMD(
+    options: ScanOptions,
+    rulesets: string[]
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
       const args = ['check'];
-      
+
       // If scanning staged files only, use file list instead of directory
-      if (options.stagedFilesOnly && options.fileList && options.fileList.length > 0) {
+      if (
+        options.stagedFilesOnly &&
+        options.fileList &&
+        options.fileList.length > 0
+      ) {
         // Use --file-list option for specific files
-        const fileListPath = path.join(os.tmpdir(), `packageforce-scan-${Date.now()}.txt`);
+        const fileListPath = path.join(
+          os.tmpdir(),
+          `packageforce-scan-${Date.now()}.txt`
+        );
         fs.writeFileSync(fileListPath, options.fileList.join('\n'));
         args.push('--file-list', fileListPath);
-        
+
         // Clean up file list after PMD runs
         process.on('exit', () => {
           try {
             fs.unlinkSync(fileListPath);
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         });
       } else {
         // Use directory scan
         args.push('-d', options.packagePath);
       }
-      
+
       args.push(
-        '-R', rulesets.join(','),
-        '-f', options.format || 'xml',
-        '--use-version', 'apex-60' // Salesforce API version
+        '-R',
+        rulesets.join(','),
+        '-f',
+        options.format || 'xml',
+        '--use-version',
+        'apex-60' // Salesforce API version
       );
 
       // Add optional parameters
@@ -424,15 +471,15 @@ export class ScanService {
       let stdout = '';
       let stderr = '';
 
-      pmdProcess.stdout.on('data', (data) => {
+      pmdProcess.stdout.on('data', data => {
         stdout += data.toString();
       });
 
-      pmdProcess.stderr.on('data', (data) => {
+      pmdProcess.stderr.on('data', data => {
         stderr += data.toString();
       });
 
-      pmdProcess.on('close', (code) => {
+      pmdProcess.on('close', code => {
         // PMD returns 4 if violations found, 0 if none
         if (code === 0 || code === 4) {
           resolve(stdout);
@@ -441,7 +488,7 @@ export class ScanService {
         }
       });
 
-      pmdProcess.on('error', (error) => {
+      pmdProcess.on('error', error => {
         reject(error);
       });
     });
@@ -450,7 +497,10 @@ export class ScanService {
   /**
    * Parse PMD output
    */
-  private async parsePMDOutput(output: string, format: string): Promise<Violation[]> {
+  private async parsePMDOutput(
+    output: string,
+    format: string
+  ): Promise<Violation[]> {
     switch (format) {
       case 'xml':
         return this.parseXMLOutput(output);
@@ -466,18 +516,20 @@ export class ScanService {
    */
   private parseXMLOutput(xmlOutput: string): Violation[] {
     const violations: Violation[] = [];
-    
+
     // Simple XML parsing (consider using a proper XML parser for production)
-    const fileMatches = xmlOutput.matchAll(/<file name="([^"]+)">([\s\S]*?)<\/file>/g);
-    
+    const fileMatches = xmlOutput.matchAll(
+      /<file name="([^"]+)">([\s\S]*?)<\/file>/g
+    );
+
     for (const fileMatch of fileMatches) {
       const fileName = fileMatch[1];
       const fileContent = fileMatch[2];
-      
+
       const violationMatches = fileContent.matchAll(
         /<violation beginline="(\d+)"(?:\s+endline="(\d+)")?(?:\s+begincolumn="(\d+)")?(?:\s+endcolumn="(\d+)")?\s+rule="([^"]+)"\s+ruleset="([^"]+)"\s+priority="(\d+)"(?:\s+externalInfoUrl="([^"]+)")?(?:\s+class="([^"]+)")?(?:\s+method="([^"]+)")?(?:\s+variable="([^"]+)")?>([^<]+)<\/violation>/g
       );
-      
+
       for (const match of violationMatches) {
         violations.push({
           file: fileName,
@@ -492,11 +544,11 @@ export class ScanService {
           className: match[9],
           methodName: match[10],
           variableName: match[11],
-          message: match[12].trim()
+          message: match[12].trim(),
         });
       }
     }
-    
+
     return violations;
   }
 
@@ -507,7 +559,7 @@ export class ScanService {
     try {
       const data = JSON.parse(jsonOutput);
       const violations: Violation[] = [];
-      
+
       if (data.files && Array.isArray(data.files)) {
         for (const file of data.files) {
           if (file.violations && Array.isArray(file.violations)) {
@@ -525,13 +577,13 @@ export class ScanService {
                 externalInfoUrl: violation.externalInfoUrl,
                 className: violation.class,
                 methodName: violation.method,
-                variableName: violation.variable
+                variableName: violation.variable,
               });
             }
           }
         }
       }
-      
+
       return violations;
     } catch (error) {
       throw new Error(`Failed to parse JSON output: ${error}`);
@@ -543,7 +595,9 @@ export class ScanService {
    */
   private displayResults(result: ScanResult): void {
     this.outputChannel.appendLine('\n📊 Scan Results:');
-    this.outputChannel.appendLine(`Total violations: ${result.totalViolations}`);
+    this.outputChannel.appendLine(
+      `Total violations: ${result.totalViolations}`
+    );
     this.outputChannel.appendLine(`Scan duration: ${result.scanDuration}ms\n`);
 
     if (result.violations.length === 0) {
@@ -563,22 +617,30 @@ export class ScanService {
     // Display violations by file
     for (const [file, violations] of violationsByFile) {
       const relativePath = path.relative(result.packagePath, file);
-      this.outputChannel.appendLine(`\n📄 ${relativePath} (${violations.length} violations):`);
-      
+      this.outputChannel.appendLine(
+        `\n📄 ${relativePath} (${violations.length} violations):`
+      );
+
       // Sort violations by line number
       violations.sort((a, b) => a.beginLine - b.beginLine);
-      
+
       for (const violation of violations) {
         const priority = this.getPriorityIcon(violation.priority);
-        const location = violation.endLine 
+        const location = violation.endLine
           ? `${violation.beginLine}-${violation.endLine}`
           : `${violation.beginLine}`;
-        
-        this.outputChannel.appendLine(`  ${priority} Line ${location}: ${violation.message}`);
-        this.outputChannel.appendLine(`     Rule: ${violation.rule} (${violation.ruleset})`);
-        
+
+        this.outputChannel.appendLine(
+          `  ${priority} Line ${location}: ${violation.message}`
+        );
+        this.outputChannel.appendLine(
+          `     Rule: ${violation.rule} (${violation.ruleset})`
+        );
+
         if (violation.externalInfoUrl) {
-          this.outputChannel.appendLine(`     Info: ${violation.externalInfoUrl}`);
+          this.outputChannel.appendLine(
+            `     Info: ${violation.externalInfoUrl}`
+          );
         }
       }
     }
@@ -591,12 +653,18 @@ export class ScanService {
    */
   private getPriorityIcon(priority: number): string {
     switch (priority) {
-      case 1: return '🔴'; // Critical
-      case 2: return '🟠'; // High
-      case 3: return '🟡'; // Medium
-      case 4: return '🔵'; // Low
-      case 5: return '⚪'; // Info
-      default: return '⚫'; // Unknown
+      case 1:
+        return '🔴'; // Critical
+      case 2:
+        return '🟠'; // High
+      case 3:
+        return '🟡'; // Medium
+      case 4:
+        return '🔵'; // Low
+      case 5:
+        return '⚪'; // Info
+      default:
+        return '⚫'; // Unknown
     }
   }
 
@@ -604,11 +672,13 @@ export class ScanService {
    * Load PMD configuration from workspace settings
    */
   public async loadWorkspaceConfiguration(): Promise<void> {
-    const workspaceConfig = vscode.workspace.getConfiguration('packageforce.scanner');
-    
+    const workspaceConfig = vscode.workspace.getConfiguration(
+      'packageforce.scanner'
+    );
+
     // Override default configuration with workspace settings
     const customPMDPath = workspaceConfig.get<string>('pmdPath');
-    if (customPMDPath && await this.fileExists(customPMDPath)) {
+    if (customPMDPath && (await this.fileExists(customPMDPath))) {
       this.pmdConfig.executablePath = customPMDPath;
       logger.info(`Using custom PMD path: ${customPMDPath}`);
     }
@@ -638,7 +708,7 @@ export class ScanService {
       'category/apex/errorprone.xml',
       'category/apex/multithreading.xml',
       'category/apex/performance.xml',
-      'category/apex/security.xml'
+      'category/apex/security.xml',
     ];
 
     // Add any custom rulesets from workspace
@@ -659,9 +729,11 @@ export class ScanService {
   /**
    * Create diagnostics map for VS Code problems panel
    */
-  public createDiagnostics(result: ScanResult): Map<vscode.Uri, vscode.Diagnostic[]> {
+  public createDiagnostics(
+    result: ScanResult
+  ): Map<vscode.Uri, vscode.Diagnostic[]> {
     const diagnosticsMap = new Map<vscode.Uri, vscode.Diagnostic[]>();
-    
+
     // Group violations by file
     const violationsByFile = new Map<string, Violation[]>();
     for (const violation of result.violations) {
@@ -727,22 +799,33 @@ export class ScanService {
   public async saveResults(
     result: ScanResult,
     packagePath: string,
-    format: 'markdown' | 'xml' | 'json' | 'csv' | 'text' | 'html' | 'sarif' = 'markdown',
+    format:
+      | 'markdown'
+      | 'xml'
+      | 'json'
+      | 'csv'
+      | 'text'
+      | 'html'
+      | 'sarif' = 'markdown',
     options?: { includeTimestamp?: boolean; includeMetadata?: boolean }
   ): Promise<string> {
     const { ReportUtils } = await import('../utils/reportUtils');
-    
+
     const reportOptions = {
       format,
       includeTimestamp: options?.includeTimestamp,
-      includeMetadata: options?.includeMetadata
+      includeMetadata: options?.includeMetadata,
     };
-    
-    const filePath = await ReportUtils.saveScanResults(result, packagePath, reportOptions);
-    
+
+    const filePath = await ReportUtils.saveScanResults(
+      result,
+      packagePath,
+      reportOptions
+    );
+
     this.outputChannel.appendLine(`\nScan results saved to: ${filePath}`);
     logger.info(`Scan results saved to: ${filePath}`);
-    
+
     return filePath;
   }
 

@@ -10,19 +10,29 @@ import { ScanService, ScanOptions } from '../services/scanService';
 const logger = Logger.getInstance();
 
 export async function deployPackageFromCodeLens(packageInfo: any) {
-  const packageName = packageInfo.package || packageInfo.path || 'Unknown Package';
-  
+  const packageName =
+    packageInfo.package || packageInfo.path || 'Unknown Package';
+
   logger.info(`Deploying package: ${packageName}`, packageInfo);
-  
+
   // Show deployment options
-  const deploymentOption = await vscode.window.showQuickPick([
-    { label: '$(rocket) Deploy Package Only', value: 'package-only' },
-    { label: '$(package) Deploy with Dependencies', value: 'with-dependencies' },
-    { label: '$(check) Validate Only (Check Deploy)', value: 'validate-only' },
-    { label: '$(gear) Advanced Options...', value: 'advanced' }
-  ], {
-    placeHolder: `Select deployment option for ${packageName}`
-  });
+  const deploymentOption = await vscode.window.showQuickPick(
+    [
+      { label: '$(rocket) Deploy Package Only', value: 'package-only' },
+      {
+        label: '$(package) Deploy with Dependencies',
+        value: 'with-dependencies',
+      },
+      {
+        label: '$(check) Validate Only (Check Deploy)',
+        value: 'validate-only',
+      },
+      { label: '$(gear) Advanced Options...', value: 'advanced' },
+    ],
+    {
+      placeHolder: `Select deployment option for ${packageName}`,
+    }
+  );
 
   if (!deploymentOption) {
     return;
@@ -47,7 +57,7 @@ export async function deployPackageFromCodeLens(packageInfo: any) {
     packageName: packageName,
     targetOrg: targetOrgResult || undefined, // undefined means use default org
     includeDependencies: false,
-    checkOnly: false
+    checkOnly: false,
   };
 
   // Handle deployment option
@@ -55,25 +65,25 @@ export async function deployPackageFromCodeLens(packageInfo: any) {
     case 'package-only':
       // Default options are fine
       break;
-      
+
     case 'with-dependencies':
       deployOptions.includeDependencies = true;
-      
+
       // Ask for start point if deploying with dependencies
       const startFrom = await vscode.window.showInputBox({
         prompt: 'Enter package name to start from (optional)',
-        placeHolder: 'Leave empty to deploy all dependencies'
+        placeHolder: 'Leave empty to deploy all dependencies',
       });
-      
+
       if (startFrom) {
         deployOptions.startFrom = startFrom;
       }
       break;
-      
+
     case 'validate-only':
       deployOptions.checkOnly = true;
       break;
-      
+
     case 'advanced':
       const advancedOptions = await showAdvancedOptions();
       if (!advancedOptions) {
@@ -84,39 +94,44 @@ export async function deployPackageFromCodeLens(packageInfo: any) {
   }
 
   // Show progress and deploy
-  await vscode.window.withProgress({
-    location: vscode.ProgressLocation.Notification,
-    title: `Deploying ${packageName}`,
-    cancellable: false
-  }, async (progress) => {
-    try {
-      progress.report({ message: 'Initializing deployment...' });
-      
-      // Create and initialize deploy service
-      const deployService = new DeployService();
-      await deployService.initialize(workspaceFolder.uri.fsPath);
-      
-      // Show output channel
-      DeployLogger.show();
-      
-      // Execute deployment
-      await deployService.deploy(deployOptions);
-      
-    } catch (error) {
-      logger.error('Deployment failed:', error);
-      vscode.window.showErrorMessage(`Deployment failed: ${error}`);
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: `Deploying ${packageName}`,
+      cancellable: false,
+    },
+    async progress => {
+      try {
+        progress.report({ message: 'Initializing deployment...' });
+
+        // Create and initialize deploy service
+        const deployService = new DeployService();
+        await deployService.initialize(workspaceFolder.uri.fsPath);
+
+        // Show output channel
+        DeployLogger.show();
+
+        // Execute deployment
+        await deployService.deploy(deployOptions);
+      } catch (error) {
+        logger.error('Deployment failed:', error);
+        vscode.window.showErrorMessage(`Deployment failed: ${error}`);
+      }
     }
-  });
+  );
 }
 
 export async function selectTargetOrg(): Promise<string | null | false> {
   // First, offer to use default or select different
-  const orgChoice = await vscode.window.showQuickPick([
-    { label: '$(globe) Use default org', value: 'default' },
-    { label: '$(search) Enter org alias/username', value: 'custom' }
-  ], {
-    placeHolder: 'Select target org'
-  });
+  const orgChoice = await vscode.window.showQuickPick(
+    [
+      { label: '$(globe) Use default org', value: 'default' },
+      { label: '$(search) Enter org alias/username', value: 'custom' },
+    ],
+    {
+      placeHolder: 'Select target org',
+    }
+  );
 
   if (!orgChoice) {
     return false; // User cancelled
@@ -130,80 +145,95 @@ export async function selectTargetOrg(): Promise<string | null | false> {
     const customOrg = await vscode.window.showInputBox({
       prompt: 'Enter target org username or alias',
       placeHolder: 'e.g., myorg@example.com or dev-sandbox',
-      ignoreFocusOut: true
+      ignoreFocusOut: true,
     });
-    
+
     if (!customOrg) {
       return false; // User cancelled
     }
-    
+
     return customOrg;
   }
 }
 
-async function showAdvancedOptions(): Promise<Partial<DeployOptions> | undefined> {
+async function showAdvancedOptions(): Promise<
+  Partial<DeployOptions> | undefined
+> {
   const options: Partial<DeployOptions> = {};
-  
+
   // Test level
-  const testLevel = await vscode.window.showQuickPick([
-    { label: '$(dash) No Tests', value: 'NoTestRun' },
-    { label: '$(beaker) Run Specified Tests', value: 'RunSpecifiedTests' },
-    { label: '$(package) Run Local Tests', value: 'RunLocalTests' },
-    { label: '$(globe) Run All Tests', value: 'RunAllTestsInOrg' }
-  ], {
-    placeHolder: 'Select test level'
-  });
-  
+  const testLevel = await vscode.window.showQuickPick(
+    [
+      { label: '$(dash) No Tests', value: 'NoTestRun' },
+      { label: '$(beaker) Run Specified Tests', value: 'RunSpecifiedTests' },
+      { label: '$(package) Run Local Tests', value: 'RunLocalTests' },
+      { label: '$(globe) Run All Tests', value: 'RunAllTestsInOrg' },
+    ],
+    {
+      placeHolder: 'Select test level',
+    }
+  );
+
   if (!testLevel) {
     return undefined;
   }
-  
+
   options.testLevel = testLevel.value as any;
-  
+
   // If specified tests, ask for test classes
   if (testLevel.value === 'RunSpecifiedTests') {
     const testsInput = await vscode.window.showInputBox({
       prompt: 'Enter test class names (comma-separated)',
-      placeHolder: 'e.g., MyTest, AccountTest, ContactTest'
+      placeHolder: 'e.g., MyTest, AccountTest, ContactTest',
     });
-    
+
     if (testsInput) {
-      options.runTests = testsInput.split(',').map(t => t.trim()).filter(t => t);
+      options.runTests = testsInput
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t);
     }
   }
-  
+
   // Include dependencies
-  const includeDeps = await vscode.window.showQuickPick([
-    { label: '$(package) Include Dependencies', value: true },
-    { label: '$(dash) Package Only', value: false }
-  ], {
-    placeHolder: 'Deploy dependencies?'
-  });
-  
+  const includeDeps = await vscode.window.showQuickPick(
+    [
+      { label: '$(package) Include Dependencies', value: true },
+      { label: '$(dash) Package Only', value: false },
+    ],
+    {
+      placeHolder: 'Deploy dependencies?',
+    }
+  );
+
   if (includeDeps) {
     options.includeDependencies = includeDeps.value;
   }
-  
+
   // Check only
-  const checkOnly = await vscode.window.showQuickPick([
-    { label: '$(rocket) Deploy', value: false },
-    { label: '$(check) Validate Only', value: true }
-  ], {
-    placeHolder: 'Deployment mode'
-  });
-  
+  const checkOnly = await vscode.window.showQuickPick(
+    [
+      { label: '$(rocket) Deploy', value: false },
+      { label: '$(check) Validate Only', value: true },
+    ],
+    {
+      placeHolder: 'Deployment mode',
+    }
+  );
+
   if (checkOnly) {
     options.checkOnly = checkOnly.value;
   }
-  
+
   return options;
 }
 
 export async function scanPackageFromCodeLens(packageInfo: any) {
-  const packageName = packageInfo.package || packageInfo.path || 'Unknown Package';
-  
+  const packageName =
+    packageInfo.package || packageInfo.path || 'Unknown Package';
+
   logger.info(`Scanning package: ${packageName}`, packageInfo);
-  
+
   // Get workspace folder
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
@@ -217,21 +247,30 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
     packagePath = path.join(workspaceFolder.uri.fsPath, packageInfo.path);
   } else {
     // Read sfdx-project.json to find package path
-    const projectJsonPath = path.join(workspaceFolder.uri.fsPath, 'sfdx-project.json');
+    const projectJsonPath = path.join(
+      workspaceFolder.uri.fsPath,
+      'sfdx-project.json'
+    );
     try {
       const projectJson = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
-      const packageDir = projectJson.packageDirectories.find((dir: any) => dir.package === packageName);
+      const packageDir = projectJson.packageDirectories.find(
+        (dir: any) => dir.package === packageName
+      );
       if (!packageDir || !packageDir.path) {
-        vscode.window.showErrorMessage(`Package path not found for ${packageName} in sfdx-project.json`);
+        vscode.window.showErrorMessage(
+          `Package path not found for ${packageName} in sfdx-project.json`
+        );
         return;
       }
       packagePath = path.join(workspaceFolder.uri.fsPath, packageDir.path);
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to read sfdx-project.json: ${error}`);
+      vscode.window.showErrorMessage(
+        `Failed to read sfdx-project.json: ${error}`
+      );
       return;
     }
   }
-  
+
   // Check if package path exists
   if (!fs.existsSync(packagePath)) {
     vscode.window.showErrorMessage(`Package path not found: ${packagePath}`);
@@ -239,14 +278,17 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
   }
 
   // Show scan options
-  const scanOption = await vscode.window.showQuickPick([
-    { label: '$(search) Quick Scan (Default Rules)', value: 'quick' },
-    { label: '$(checklist) Full Scan (All Rules)', value: 'full' },
-    { label: '$(gear) Custom Scan...', value: 'custom' },
-    { label: '$(folder) Scan with Custom Rules', value: 'custom-rules' }
-  ], {
-    placeHolder: `Select scan option for ${packageName}`
-  });
+  const scanOption = await vscode.window.showQuickPick(
+    [
+      { label: '$(search) Quick Scan (Default Rules)', value: 'quick' },
+      { label: '$(checklist) Full Scan (All Rules)', value: 'full' },
+      { label: '$(gear) Custom Scan...', value: 'custom' },
+      { label: '$(folder) Scan with Custom Rules', value: 'custom-rules' },
+    ],
+    {
+      placeHolder: `Select scan option for ${packageName}`,
+    }
+  );
 
   if (!scanOption) {
     return;
@@ -258,7 +300,7 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
     packagePath: packagePath,
     packageName: packageName,
     format: 'xml',
-    cache: true
+    cache: true,
   };
 
   // Configure based on scan option
@@ -267,7 +309,7 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
       scanOptions.rulesets = [
         'category/apex/bestpractices.xml',
         'category/apex/errorprone.xml',
-        'category/apex/security.xml'
+        'category/apex/security.xml',
       ];
       scanOptions.minimumPriority = 3;
       break;
@@ -282,7 +324,9 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
       Object.assign(scanOptions, customOptions);
       break;
     case 'custom-rules':
-      const customRulesPath = await selectCustomRulesPath(workspaceFolder.uri.fsPath);
+      const customRulesPath = await selectCustomRulesPath(
+        workspaceFolder.uri.fsPath
+      );
       if (customRulesPath) {
         scanOptions.customRulesPath = customRulesPath;
       }
@@ -290,7 +334,9 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
   }
 
   // Create diagnostic collection
-  const diagnostics = vscode.languages.createDiagnosticCollection('packageforce.scanner');
+  const diagnostics = vscode.languages.createDiagnosticCollection(
+    'packageforce.scanner'
+  );
 
   // Run scan with progress
   await vscode.window.withProgress(
@@ -314,7 +360,10 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
           return;
         }
 
-        progress.report({ increment: 40, message: 'Running static analysis...' });
+        progress.report({
+          increment: 40,
+          message: 'Running static analysis...',
+        });
         const result = await scanService.scanPackage(scanOptions);
 
         if (token.isCancellationRequested) {
@@ -323,7 +372,7 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
         }
 
         progress.report({ increment: 80, message: 'Processing results...' });
-        
+
         // Update diagnostics
         const scanDiagnostics = scanService.createDiagnostics(result);
         diagnostics.clear();
@@ -334,9 +383,10 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
         progress.report({ increment: 100, message: 'Analysis complete!' });
 
         // Show summary
-        const violationSummary = result.totalViolations === 0 
-          ? 'No violations found!' 
-          : `Found ${result.totalViolations} violation${result.totalViolations === 1 ? '' : 's'}`;
+        const violationSummary =
+          result.totalViolations === 0
+            ? 'No violations found!'
+            : `Found ${result.totalViolations} violation${result.totalViolations === 1 ? '' : 's'}`;
 
         const actions = ['View Output', 'Save to Package', 'Export Report'];
         const action = await vscode.window.showInformationMessage(
@@ -351,10 +401,10 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
         } else if (action === 'Export Report') {
           await exportScanReport(result, workspaceFolder.uri.fsPath);
         }
-
       } catch (error) {
         diagnostics.dispose();
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         logger.error(`Scan failed for ${packageName}:`, error);
         vscode.window.showErrorMessage(`Scan failed: ${errorMessage}`);
       }
@@ -362,20 +412,24 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
   );
 }
 
-async function showScanCustomOptions(): Promise<Partial<ScanOptions> | undefined> {
+async function showScanCustomOptions(): Promise<
+  Partial<ScanOptions> | undefined
+> {
   const options: Partial<ScanOptions> = {};
 
   // Select rulesets
-  const availableRulesets = await ScanService.getInstance().getAvailableRulesets();
+  const availableRulesets =
+    await ScanService.getInstance().getAvailableRulesets();
   const selectedRulesets = await vscode.window.showQuickPick(
     availableRulesets.map(ruleset => ({
       label: path.basename(ruleset, '.xml'),
       description: ruleset,
-      picked: ruleset.includes('bestpractices') || ruleset.includes('errorprone')
+      picked:
+        ruleset.includes('bestpractices') || ruleset.includes('errorprone'),
     })),
     {
       placeHolder: 'Select rulesets to use',
-      canPickMany: true
+      canPickMany: true,
     }
   );
 
@@ -386,15 +440,18 @@ async function showScanCustomOptions(): Promise<Partial<ScanOptions> | undefined
   options.rulesets = selectedRulesets.map(item => item.description);
 
   // Select minimum priority
-  const priority = await vscode.window.showQuickPick([
-    { label: '🔴 Critical (1)', value: '1' },
-    { label: '🟠 High (2)', value: '2' },
-    { label: '🟡 Medium (3)', value: '3' },
-    { label: '🔵 Low (4)', value: '4' },
-    { label: '⚪ Info (5)', value: '5' }
-  ], {
-    placeHolder: 'Select minimum priority level'
-  });
+  const priority = await vscode.window.showQuickPick(
+    [
+      { label: '🔴 Critical (1)', value: '1' },
+      { label: '🟠 High (2)', value: '2' },
+      { label: '🟡 Medium (3)', value: '3' },
+      { label: '🔵 Low (4)', value: '4' },
+      { label: '⚪ Info (5)', value: '5' },
+    ],
+    {
+      placeHolder: 'Select minimum priority level',
+    }
+  );
 
   if (priority) {
     options.minimumPriority = parseInt(priority.value);
@@ -404,12 +461,12 @@ async function showScanCustomOptions(): Promise<Partial<ScanOptions> | undefined
   const threads = await vscode.window.showInputBox({
     prompt: 'Number of threads (leave empty for default)',
     placeHolder: '4',
-    validateInput: (value) => {
+    validateInput: value => {
       if (value && (isNaN(parseInt(value)) || parseInt(value) < 1)) {
         return 'Please enter a valid number greater than 0';
       }
       return null;
-    }
+    },
   });
 
   if (threads) {
@@ -419,12 +476,14 @@ async function showScanCustomOptions(): Promise<Partial<ScanOptions> | undefined
   return options;
 }
 
-async function selectCustomRulesPath(workspacePath: string): Promise<string | undefined> {
+async function selectCustomRulesPath(
+  workspacePath: string
+): Promise<string | undefined> {
   // Check common locations for custom rules
   const commonPaths = [
     path.join(workspacePath, '.pmd'),
     path.join(workspacePath, 'config', 'pmd'),
-    path.join(workspacePath, 'pmd-rules')
+    path.join(workspacePath, 'pmd-rules'),
   ];
 
   const existingPaths = [];
@@ -432,7 +491,7 @@ async function selectCustomRulesPath(workspacePath: string): Promise<string | un
     if (fs.existsSync(p)) {
       existingPaths.push({
         label: path.basename(p),
-        description: p
+        description: p,
       });
     }
   }
@@ -440,11 +499,11 @@ async function selectCustomRulesPath(workspacePath: string): Promise<string | un
   if (existingPaths.length > 0) {
     existingPaths.push({
       label: 'Browse...',
-      description: 'Select a different directory'
+      description: 'Select a different directory',
     });
 
     const selected = await vscode.window.showQuickPick(existingPaths, {
-      placeHolder: 'Select custom rules directory'
+      placeHolder: 'Select custom rules directory',
     });
 
     if (selected) {
@@ -453,7 +512,7 @@ async function selectCustomRulesPath(workspacePath: string): Promise<string | un
           canSelectFiles: false,
           canSelectFolders: true,
           canSelectMany: false,
-          openLabel: 'Select Rules Directory'
+          openLabel: 'Select Rules Directory',
         });
 
         return uri?.[0]?.fsPath;
@@ -467,7 +526,7 @@ async function selectCustomRulesPath(workspacePath: string): Promise<string | un
       canSelectFiles: false,
       canSelectFolders: true,
       canSelectMany: false,
-      openLabel: 'Select Custom Rules Directory'
+      openLabel: 'Select Custom Rules Directory',
     });
 
     return uri?.[0]?.fsPath;
@@ -476,16 +535,19 @@ async function selectCustomRulesPath(workspacePath: string): Promise<string | un
   return undefined;
 }
 
-async function exportScanReport(result: any, workspacePath: string): Promise<void> {
+async function exportScanReport(
+  result: any,
+  workspacePath: string
+): Promise<void> {
   const formats = [
     { label: '📄 HTML Report', value: 'html' },
     { label: '📊 CSV Export', value: 'csv' },
     { label: '📋 JSON Export', value: 'json' },
-    { label: '📝 Markdown Report', value: 'md' }
+    { label: '📝 Markdown Report', value: 'md' },
   ];
 
   const format = await vscode.window.showQuickPick(formats, {
-    placeHolder: 'Select export format'
+    placeHolder: 'Select export format',
   });
 
   if (!format) {
@@ -497,8 +559,8 @@ async function exportScanReport(result: any, workspacePath: string): Promise<voi
     defaultUri: vscode.Uri.file(path.join(workspacePath, defaultFileName)),
     filters: {
       'Report Files': [format.value],
-      'All Files': ['*']
-    }
+      'All Files': ['*'],
+    },
   });
 
   if (!uri) {
@@ -524,7 +586,9 @@ async function exportScanReport(result: any, workspacePath: string): Promise<voi
     }
 
     await fs.promises.writeFile(uri.fsPath, content, 'utf8');
-    vscode.window.showInformationMessage(`Report exported to ${path.basename(uri.fsPath)}`);
+    vscode.window.showInformationMessage(
+      `Report exported to ${path.basename(uri.fsPath)}`
+    );
 
     // Offer to open the file
     const action = await vscode.window.showInformationMessage(
@@ -575,7 +639,7 @@ function generateHTMLReport(result: any): string {
 
 function generateHTMLViolations(violations: any[]): string {
   const violationsByFile = new Map<string, any[]>();
-  
+
   for (const violation of violations) {
     if (!violationsByFile.has(violation.file)) {
       violationsByFile.set(violation.file, []);
@@ -587,7 +651,7 @@ function generateHTMLViolations(violations: any[]): string {
   for (const [file, fileViolations] of violationsByFile) {
     html += `<div class="file-group">`;
     html += `<div class="file-name">${file}</div>`;
-    
+
     for (const violation of fileViolations) {
       html += `<div class="violation priority-${violation.priority}">`;
       html += `<strong>Line ${violation.beginLine}:</strong> ${violation.message}<br>`;
@@ -596,25 +660,25 @@ function generateHTMLViolations(violations: any[]): string {
     }
     html += `</div>`;
   }
-  
+
   return html;
 }
 
 function generateCSVReport(result: any): string {
   const headers = ['File', 'Line', 'Priority', 'Rule', 'Message'];
   const rows = [headers.join(',')];
-  
+
   for (const violation of result.violations) {
     const row = [
       `"${violation.file}"`,
       violation.beginLine,
       violation.priority,
       `"${violation.rule}"`,
-      `"${violation.message.replace(/"/g, '""')}"`
+      `"${violation.message.replace(/"/g, '""')}"`,
     ];
     rows.push(row.join(','));
   }
-  
+
   return rows.join('\n');
 }
 
@@ -623,12 +687,12 @@ function generateMarkdownReport(result: any): string {
   md += `**Total Violations:** ${result.totalViolations}  \n`;
   md += `**Scan Date:** ${new Date(result.timestamp).toLocaleString()}  \n`;
   md += `**Scan Duration:** ${result.scanDuration}ms  \n\n`;
-  
+
   if (result.violations.length === 0) {
     md += '✅ No violations found!\n';
     return md;
   }
-  
+
   // Group by file
   const violationsByFile = new Map<string, any[]>();
   for (const violation of result.violations) {
@@ -637,43 +701,52 @@ function generateMarkdownReport(result: any): string {
     }
     violationsByFile.get(violation.file)!.push(violation);
   }
-  
+
   for (const [file, violations] of violationsByFile) {
     md += `## ${file}\n\n`;
     md += '| Line | Priority | Rule | Message |\n';
     md += '|------|----------|------|----------|\n';
-    
+
     for (const violation of violations) {
       const priority = getPriorityEmoji(violation.priority);
       md += `| ${violation.beginLine} | ${priority} ${violation.priority} | ${violation.rule} | ${violation.message} |\n`;
     }
     md += '\n';
   }
-  
+
   return md;
 }
 
 function getPriorityEmoji(priority: number): string {
   switch (priority) {
-    case 1: return '🔴';
-    case 2: return '🟠';
-    case 3: return '🟡';
-    case 4: return '🔵';
-    case 5: return '⚪';
-    default: return '⚫';
+    case 1:
+      return '🔴';
+    case 2:
+      return '🟠';
+    case 3:
+      return '🟡';
+    case 4:
+      return '🔵';
+    case 5:
+      return '⚪';
+    default:
+      return '⚫';
   }
 }
 
-async function exportDuplicateReport(result: any, workspacePath: string): Promise<void> {
+async function exportDuplicateReport(
+  result: any,
+  workspacePath: string
+): Promise<void> {
   const formats = [
     { label: '📄 HTML Report', value: 'html' },
     { label: '📊 CSV Export', value: 'csv' },
     { label: '📋 JSON Export', value: 'json' },
-    { label: '📝 Markdown Report', value: 'md' }
+    { label: '📝 Markdown Report', value: 'md' },
   ];
 
   const format = await vscode.window.showQuickPick(formats, {
-    placeHolder: 'Select export format'
+    placeHolder: 'Select export format',
   });
 
   if (!format) {
@@ -685,8 +758,8 @@ async function exportDuplicateReport(result: any, workspacePath: string): Promis
     defaultUri: vscode.Uri.file(path.join(workspacePath, defaultFileName)),
     filters: {
       'Report Files': [format.value],
-      'All Files': ['*']
-    }
+      'All Files': ['*'],
+    },
   });
 
   if (!uri) {
@@ -712,7 +785,9 @@ async function exportDuplicateReport(result: any, workspacePath: string): Promis
     }
 
     await fs.promises.writeFile(uri.fsPath, content, 'utf8');
-    vscode.window.showInformationMessage(`Report exported to ${path.basename(uri.fsPath)}`);
+    vscode.window.showInformationMessage(
+      `Report exported to ${path.basename(uri.fsPath)}`
+    );
 
     // Offer to open the file
     const action = await vscode.window.showInformationMessage(
@@ -753,9 +828,10 @@ function generateDuplicateHTMLReport(result: any): string {
         <p><strong>Scan Date:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
         <p><strong>Scan Duration:</strong> ${result.scanDuration}ms</p>
     </div>
-    ${result.totalDuplications === 0 ? 
-      '<div class="no-duplicates">✅ No duplicate code found!</div>' :
-      generateDuplicateHTMLBody(result.duplications)
+    ${
+      result.totalDuplications === 0
+        ? '<div class="no-duplicates">✅ No duplicate code found!</div>'
+        : generateDuplicateHTMLBody(result.duplications)
     }
 </body>
 </html>`;
@@ -769,7 +845,7 @@ function generateDuplicateHTMLBody(duplications: any[]): string {
     html += `<h3>Duplication #${index + 1}</h3>`;
     html += `<p><strong>Size:</strong> ${dup.lines} lines, ${dup.tokens} tokens</p>`;
     html += `<p><strong>Found in ${dup.occurrences.length} locations:</strong></p>`;
-    
+
     dup.occurrences.forEach((occ: any, occIndex: number) => {
       html += `<div class="occurrence">`;
       html += `<strong>${occIndex + 1}.</strong> ${occ.file}<br>`;
@@ -781,7 +857,7 @@ function generateDuplicateHTMLBody(duplications: any[]): string {
       html += `<h4>Code Fragment:</h4>`;
       html += `<div class="code-fragment">${escapeHtml(dup.occurrences[0].codeFragment)}</div>`;
     }
-    
+
     html += `</div>`;
   });
   return html;
@@ -793,15 +869,22 @@ function escapeHtml(text: string): string {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#39;'
+    "'": '&#39;',
   };
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 function generateDuplicateCSVReport(result: any): string {
-  const headers = ['Duplication #', 'Lines', 'Tokens', 'File', 'Start Line', 'End Line'];
+  const headers = [
+    'Duplication #',
+    'Lines',
+    'Tokens',
+    'File',
+    'Start Line',
+    'End Line',
+  ];
   const rows = [headers.join(',')];
-  
+
   result.duplications.forEach((dup: any, dupIndex: number) => {
     dup.occurrences.forEach((occ: any) => {
       const row = [
@@ -810,12 +893,12 @@ function generateDuplicateCSVReport(result: any): string {
         dup.tokens,
         `"${occ.file}"`,
         occ.startLine,
-        occ.endLine
+        occ.endLine,
       ];
       rows.push(row.join(','));
     });
   });
-  
+
   return rows.join('\n');
 }
 
@@ -826,44 +909,46 @@ function generateDuplicateMarkdownReport(result: any): string {
   md += `**Total Duplicated Tokens:** ${result.totalDuplicatedTokens}  \n`;
   md += `**Scan Date:** ${new Date(result.timestamp).toLocaleString()}  \n`;
   md += `**Scan Duration:** ${result.scanDuration}ms  \n\n`;
-  
+
   if (result.totalDuplications === 0) {
     md += '✅ **No duplicate code found!**\n';
     return md;
   }
-  
+
   result.duplications.forEach((dup: any, index: number) => {
     md += `## Duplication #${index + 1}\n\n`;
     md += `- **Size:** ${dup.lines} lines, ${dup.tokens} tokens\n`;
     md += `- **Found in ${dup.occurrences.length} locations:**\n\n`;
-    
+
     dup.occurrences.forEach((occ: any, occIndex: number) => {
       md += `  ${occIndex + 1}. \`${occ.file}\`\n`;
       md += `     - Lines ${occ.startLine}-${occ.endLine}\n`;
     });
-    
+
     if (dup.occurrences[0]?.codeFragment) {
       md += `\n### Code Fragment:\n\n`;
       md += '```apex\n';
       md += dup.occurrences[0].codeFragment;
       md += '\n```\n';
     }
-    
+
     md += '\n---\n\n';
   });
-  
+
   return md;
 }
 
-
 export async function findDuplicatesFromCodeLens(packageInfo: any) {
-  const packageName = packageInfo.package || packageInfo.path || 'Unknown Package';
-  
+  const packageName =
+    packageInfo.package || packageInfo.path || 'Unknown Package';
+
   logger.info(`Finding duplicates for package: ${packageName}`, packageInfo);
-  
+
   // Import duplicate detector service dynamically
-  const { DuplicateDetectorService } = await import('../services/duplicateDetectorService');
-  
+  const { DuplicateDetectorService } = await import(
+    '../services/duplicateDetectorService'
+  );
+
   // Get workspace folder
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
@@ -877,17 +962,26 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
     packagePath = path.join(workspaceFolder.uri.fsPath, packageInfo.path);
   } else {
     // Read sfdx-project.json to find package path
-    const projectJsonPath = path.join(workspaceFolder.uri.fsPath, 'sfdx-project.json');
+    const projectJsonPath = path.join(
+      workspaceFolder.uri.fsPath,
+      'sfdx-project.json'
+    );
     try {
       const projectJson = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
-      const packageDir = projectJson.packageDirectories.find((dir: any) => dir.package === packageName);
+      const packageDir = projectJson.packageDirectories.find(
+        (dir: any) => dir.package === packageName
+      );
       if (!packageDir || !packageDir.path) {
-        vscode.window.showErrorMessage(`Package path not found for ${packageName} in sfdx-project.json`);
+        vscode.window.showErrorMessage(
+          `Package path not found for ${packageName} in sfdx-project.json`
+        );
         return;
       }
       packagePath = path.join(workspaceFolder.uri.fsPath, packageDir.path);
     } catch (error) {
-      vscode.window.showErrorMessage(`Failed to read sfdx-project.json: ${error}`);
+      vscode.window.showErrorMessage(
+        `Failed to read sfdx-project.json: ${error}`
+      );
       return;
     }
   }
@@ -899,14 +993,29 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
   }
 
   // Show options for duplicate detection
-  const duplicateOption = await vscode.window.showQuickPick([
-    { label: '$(search) Large Duplicates (500+ tokens)', value: 'large', tokens: 500 },
-    { label: '$(checklist) Medium Duplicates (200+ tokens)', value: 'medium', tokens: 200 },
-    { label: '$(microscope) Small Duplicates (100+ tokens)', value: 'small', tokens: 100 },
-    { label: '$(gear) Custom Settings...', value: 'custom' }
-  ], {
-    placeHolder: `Select duplicate detection sensitivity for ${packageName}`
-  });
+  const duplicateOption = await vscode.window.showQuickPick(
+    [
+      {
+        label: '$(search) Large Duplicates (500+ tokens)',
+        value: 'large',
+        tokens: 500,
+      },
+      {
+        label: '$(checklist) Medium Duplicates (200+ tokens)',
+        value: 'medium',
+        tokens: 200,
+      },
+      {
+        label: '$(microscope) Small Duplicates (100+ tokens)',
+        value: 'small',
+        tokens: 100,
+      },
+      { label: '$(gear) Custom Settings...', value: 'custom' },
+    ],
+    {
+      placeHolder: `Select duplicate detection sensitivity for ${packageName}`,
+    }
+  );
 
   if (!duplicateOption) {
     return;
@@ -922,13 +1031,13 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
       prompt: 'Minimum tokens for duplicate detection',
       value: '100',
       placeHolder: 'Enter a number (e.g., 50, 75, 100)',
-      validateInput: (value) => {
+      validateInput: value => {
         const num = parseInt(value);
         if (isNaN(num) || num < 10) {
           return 'Please enter a number greater than or equal to 10';
         }
         return null;
-      }
+      },
     });
 
     if (!tokensInput) {
@@ -937,23 +1046,46 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
     minimumTokens = parseInt(tokensInput);
 
     // Ask about ignore options
-    const ignoreOptions = await vscode.window.showQuickPick([
-      { label: 'Exact Match', description: 'Find exact duplicates only', value: 'exact' },
-      { label: 'Ignore Variable Names', description: 'Ignore identifier differences', value: 'identifiers' },
-      { label: 'Ignore Literals', description: 'Ignore string/number differences', value: 'literals' },
-      { label: 'Ignore Both', description: 'Most flexible matching', value: 'both' }
-    ], {
-      placeHolder: 'Select matching options'
-    });
+    const ignoreOptions = await vscode.window.showQuickPick(
+      [
+        {
+          label: 'Exact Match',
+          description: 'Find exact duplicates only',
+          value: 'exact',
+        },
+        {
+          label: 'Ignore Variable Names',
+          description: 'Ignore identifier differences',
+          value: 'identifiers',
+        },
+        {
+          label: 'Ignore Literals',
+          description: 'Ignore string/number differences',
+          value: 'literals',
+        },
+        {
+          label: 'Ignore Both',
+          description: 'Most flexible matching',
+          value: 'both',
+        },
+      ],
+      {
+        placeHolder: 'Select matching options',
+      }
+    );
 
     if (ignoreOptions) {
-      ignoreIdentifiers = ignoreOptions.value === 'identifiers' || ignoreOptions.value === 'both';
-      ignoreLiterals = ignoreOptions.value === 'literals' || ignoreOptions.value === 'both';
+      ignoreIdentifiers =
+        ignoreOptions.value === 'identifiers' || ignoreOptions.value === 'both';
+      ignoreLiterals =
+        ignoreOptions.value === 'literals' || ignoreOptions.value === 'both';
     }
   }
 
   // Create diagnostic collection for duplicates
-  const diagnostics = vscode.languages.createDiagnosticCollection('packageforce.duplicates');
+  const diagnostics = vscode.languages.createDiagnosticCollection(
+    'packageforce.duplicates'
+  );
 
   await vscode.window.withProgress(
     {
@@ -963,15 +1095,21 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
     },
     async (progress, token) => {
       try {
-        progress.report({ increment: 0, message: 'Initializing duplicate detection...' });
+        progress.report({
+          increment: 0,
+          message: 'Initializing duplicate detection...',
+        });
 
         const duplicateService = DuplicateDetectorService.getInstance();
-        
+
         if (token.isCancellationRequested) {
           return;
         }
 
-        progress.report({ increment: 20, message: 'Scanning package files...' });
+        progress.report({
+          increment: 20,
+          message: 'Scanning package files...',
+        });
 
         const options = {
           packagePath,
@@ -980,10 +1118,13 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
           minimumTokens,
           ignoreIdentifiers,
           ignoreLiterals,
-          language: 'apex' as const
+          language: 'apex' as const,
         };
 
-        progress.report({ increment: 40, message: 'Analyzing code patterns...' });
+        progress.report({
+          increment: 40,
+          message: 'Analyzing code patterns...',
+        });
 
         const result = await duplicateService.findDuplicates(options);
 
@@ -995,7 +1136,8 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
         progress.report({ increment: 80, message: 'Processing results...' });
 
         // Update diagnostics
-        const duplicateDiagnostics = duplicateService.createDuplicateDiagnostics(result);
+        const duplicateDiagnostics =
+          duplicateService.createDuplicateDiagnostics(result);
         diagnostics.clear();
         duplicateDiagnostics.forEach((fileDiagnostics, uri) => {
           diagnostics.set(uri, fileDiagnostics);
@@ -1004,19 +1146,27 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
         progress.report({ increment: 100, message: 'Analysis complete!' });
 
         // Show summary
-        const summary = result.totalDuplications === 0 
-          ? 'No duplicate code found!' 
-          : `Found ${result.totalDuplications} duplicate block${result.totalDuplications === 1 ? '' : 's'}`;
+        const summary =
+          result.totalDuplications === 0
+            ? 'No duplicate code found!'
+            : `Found ${result.totalDuplications} duplicate block${result.totalDuplications === 1 ? '' : 's'}`;
 
         // Determine if there are cross-package duplicates
         let hasCrossPackageDuplicates = false;
         result.duplications.forEach(dup => {
           const packages = new Set<string>();
           dup.occurrences.forEach(occ => {
-            const pkgName = occ.file.includes('/') ? 
-              occ.file.split('/').find((part: string) => 
-                part.endsWith('-app') || part === 'force-app' || part === 'src'
-              )?.replace('-app', '') || 'unknown' : 'unknown';
+            const pkgName = occ.file.includes('/')
+              ? occ.file
+                  .split('/')
+                  .find(
+                    (part: string) =>
+                      part.endsWith('-app') ||
+                      part === 'force-app' ||
+                      part === 'src'
+                  )
+                  ?.replace('-app', '') || 'unknown'
+              : 'unknown';
             packages.add(pkgName);
           });
           if (packages.size > 1) {
@@ -1030,18 +1180,22 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
             `Duplicate analysis for "${packageName}" completed. ${summary}`,
             ...actions
           );
-          
+
           if (action === 'View Output') {
             duplicateService.outputChannel.show();
           } else if (action === 'Save to Package') {
-            await saveDuplicateResultsToPackage(result, packagePath, duplicateService);
+            await saveDuplicateResultsToPackage(
+              result,
+              packagePath,
+              duplicateService
+            );
           }
         } else {
           // Show error for duplicates, especially cross-package ones
-          const errorMessage = hasCrossPackageDuplicates 
+          const errorMessage = hasCrossPackageDuplicates
             ? `❌ Duplicate analysis failed for "${packageName}". ${summary} including cross-package duplicates!`
             : `⚠️ Duplicate analysis for "${packageName}" completed with warnings. ${summary}`;
-          
+
           const actions = ['View Output', 'Save to Package', 'Export Report'];
           const action = await vscode.window.showErrorMessage(
             errorMessage,
@@ -1051,20 +1205,28 @@ export async function findDuplicatesFromCodeLens(packageInfo: any) {
           if (action === 'View Output') {
             duplicateService.outputChannel.show();
           } else if (action === 'Save to Package') {
-            await saveDuplicateResultsToPackage(result, packagePath, duplicateService);
+            await saveDuplicateResultsToPackage(
+              result,
+              packagePath,
+              duplicateService
+            );
           } else if (action === 'Export Report') {
             await exportDuplicateReport(result, workspaceFolder.uri.fsPath);
           }
-          
-          // Throw error to indicate failure
-          throw new Error(`Duplicate code detected in package ${packageName}: ${summary}`);
-        }
 
+          // Throw error to indicate failure
+          throw new Error(
+            `Duplicate code detected in package ${packageName}: ${summary}`
+          );
+        }
       } catch (error) {
         diagnostics.dispose();
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         logger.error(`Duplicate detection failed for ${packageName}:`, error);
-        vscode.window.showErrorMessage(`Duplicate detection failed: ${errorMessage}`);
+        vscode.window.showErrorMessage(
+          `Duplicate detection failed: ${errorMessage}`
+        );
       }
     }
   );
@@ -1082,11 +1244,11 @@ async function saveScanResultsToPackage(
     { label: '📈 CSV Format', value: 'csv' },
     { label: '📃 Plain Text', value: 'text' },
     { label: '🌐 HTML Report', value: 'html' },
-    { label: '🔧 SARIF (GitHub/VS Code)', value: 'sarif' }
+    { label: '🔧 SARIF (GitHub/VS Code)', value: 'sarif' },
   ];
 
   const format = await vscode.window.showQuickPick(formats, {
-    placeHolder: 'Select format for scan results'
+    placeHolder: 'Select format for scan results',
   });
 
   if (!format) {
@@ -1116,7 +1278,9 @@ async function saveScanResultsToPackage(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`Failed to save scan results: ${errorMessage}`);
+    vscode.window.showErrorMessage(
+      `Failed to save scan results: ${errorMessage}`
+    );
   }
 }
 
@@ -1130,11 +1294,11 @@ async function saveDuplicateResultsToPackage(
     { label: '📄 CPD XML Format', value: 'xml' },
     { label: '📊 JSON Format', value: 'json' },
     { label: '📈 CSV Format', value: 'csv' },
-    { label: '📃 Plain Text', value: 'text' }
+    { label: '📃 Plain Text', value: 'text' },
   ];
 
   const format = await vscode.window.showQuickPick(formats, {
-    placeHolder: 'Select format for duplicate analysis results'
+    placeHolder: 'Select format for duplicate analysis results',
   });
 
   if (!format) {
@@ -1164,14 +1328,16 @@ async function saveDuplicateResultsToPackage(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`Failed to save duplicate analysis results: ${errorMessage}`);
+    vscode.window.showErrorMessage(
+      `Failed to save duplicate analysis results: ${errorMessage}`
+    );
   }
 }
 
 export async function testPackageFromCodeLens(packageInfo: any) {
   try {
     logger.info('Test package from CodeLens triggered', packageInfo);
-    
+
     // Get workspace folder
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
@@ -1184,10 +1350,10 @@ export async function testPackageFromCodeLens(packageInfo: any) {
       ['Asynchronous (Default)', 'Synchronous'],
       {
         placeHolder: 'Select test execution mode',
-        ignoreFocusOut: true
+        ignoreFocusOut: true,
       }
     );
-    
+
     if (!executionMode) {
       return;
     }
@@ -1201,52 +1367,67 @@ export async function testPackageFromCodeLens(packageInfo: any) {
 
     // Initialize test service
     const testService = new TestService();
-    
+
     // Get package path from sfdx-project.json
-    const projectJsonPath = path.join(workspaceFolder.uri.fsPath, 'sfdx-project.json');
+    const projectJsonPath = path.join(
+      workspaceFolder.uri.fsPath,
+      'sfdx-project.json'
+    );
     const projectJson = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
-    const packageDir = projectJson.packageDirectories.find((dir: any) => dir.package === packageInfo.package);
-    
+    const packageDir = projectJson.packageDirectories.find(
+      (dir: any) => dir.package === packageInfo.package
+    );
+
     if (!packageDir) {
-      vscode.window.showErrorMessage(`Package ${packageInfo.package} not found in sfdx-project.json`);
+      vscode.window.showErrorMessage(
+        `Package ${packageInfo.package} not found in sfdx-project.json`
+      );
       return;
     }
 
     const packagePath = path.join(workspaceFolder.uri.fsPath, packageDir.path);
-    
+
     // Prepare test options
     const testOptions: TestOptions = {
       packageName: packageInfo.package,
       packagePath: packagePath,
       targetOrg: targetOrg,
-      runAsync: executionMode.startsWith('Asynchronous')
+      runAsync: executionMode.startsWith('Asynchronous'),
     };
 
     // Show progress and run tests
     let testResult: TestResult | undefined;
-    await vscode.window.withProgress({
-      location: vscode.ProgressLocation.Notification,
-      title: `Running tests with coverage for ${packageInfo.package}`,
-      cancellable: false
-    }, async (progress) => {
-      progress.report({ message: 'Connecting to org...' });
-      
-      // Run tests with coverage
-      testResult = await testService.runTestsWithCoverage(testOptions);
-    });
-    
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: `Running tests with coverage for ${packageInfo.package}`,
+        cancellable: false,
+      },
+      async progress => {
+        progress.report({ message: 'Connecting to org...' });
+
+        // Run tests with coverage
+        testResult = await testService.runTestsWithCoverage(testOptions);
+      }
+    );
+
     // Show result notification after progress is complete
     if (testResult) {
       if (testResult.success) {
-        const coverageInfo = testResult.coverage ? ` (${testResult.coverage.overall}% coverage)` : '';
+        const coverageInfo = testResult.coverage
+          ? ` (${testResult.coverage.overall}% coverage)`
+          : '';
         const actions = ['View Output'];
         const selection = await vscode.window.showInformationMessage(
           `✅ Tests passed! ${testResult.passing} tests passed${coverageInfo}`,
           ...actions
         );
-        
+
         if (selection === 'View Output') {
-          vscode.commands.executeCommand('workbench.action.output.show', 'Packageforce Tests');
+          vscode.commands.executeCommand(
+            'workbench.action.output.show',
+            'Packageforce Tests'
+          );
         }
       } else {
         const actions = ['View Output'];
@@ -1254,16 +1435,17 @@ export async function testPackageFromCodeLens(packageInfo: any) {
           `❌ Tests failed! ${testResult.passing} passed, ${testResult.failing} failed`,
           ...actions
         );
-        
+
         if (selection === 'View Output') {
-          vscode.commands.executeCommand('workbench.action.output.show', 'Packageforce Tests');
+          vscode.commands.executeCommand(
+            'workbench.action.output.show',
+            'Packageforce Tests'
+          );
         }
       }
     }
-    
   } catch (error) {
     logger.error('Test package failed:', error);
     vscode.window.showErrorMessage(`Test failed: ${error}`);
   }
 }
-
