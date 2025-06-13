@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Credit_Limit__c</fullName>
+    <label>Credit Limit</label>
+    <description>Maximum credit amount allowed for this customer based on credit check and payment history</description>
+    <inlineHelpText>Enter the maximum credit limit in USD. Leave blank for no credit limit. Contact Finance team to adjust limits above $50,000.</inlineHelpText>
+    <!-- GOOD: Has both description and help text -->
+    <type>Currency</type>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>false</required>
+</CustomField>

@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Metadata Description Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Rules to enforce proper documentation of Salesforce metadata including objects and fields
+    </description>
+
+    <!-- Rule to detect empty object descriptions -->
+    <rule name="EmptyObjectDescription"
+          language="xml"
+          message="Object must have a description. Empty descriptions make it difficult to understand the purpose of custom objects."
+          class="net.sourceforge.pmd.lang.xml.rule.XPathRule"
+          externalInfoUrl="https://help.salesforce.com/s/articleView?id=sf.dev_objectcreate_task_lex.htm">
+        
+        <description>
+            Custom objects should have meaningful descriptions to help other developers and administrators 
+            understand their purpose and usage. This is especially important for maintaining large orgs.
+        </description>
+        
+        <priority>2</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//CustomObject[
+    not(description) or 
+    normalize-space(description) = '' or
+    description = 'TODO' or
+    description = 'TBD' or
+    description = 'N/A'
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+<!-- BAD - No description -->
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Invoice</label>
+    <pluralLabel>Invoices</pluralLabel>
+    <nameField>
+        <label>Invoice Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>Private</sharingModel>
+</CustomObject>
+
+<!-- GOOD - Has meaningful description -->
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Invoice</label>
+    <pluralLabel>Invoices</pluralLabel>
+    <description>Stores customer invoice information including line items, payment terms, and billing details. Related to Account and Opportunity objects.</description>
+    <nameField>
+        <label>Invoice Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>Private</sharingModel>
+</CustomObject>
+]]>
+        </example>
+    </rule>
+
+    <!-- Rule to detect empty field descriptions -->
+    <rule name="EmptyFieldDescription"
+          language="xml"
+          message="Field must have a description or help text. Fields without descriptions are difficult to understand and use correctly."
+          class="net.sourceforge.pmd.lang.xml.rule.XPathRule"
+          externalInfoUrl="https://help.salesforce.com/s/articleView?id=sf.adding_fields.htm">
+        
+        <description>
+            Custom fields should have either a description or help text (preferably both) to explain their purpose,
+            valid values, and any business rules. This improves usability and reduces support requests.
+        </description>
+        
+        <priority>2</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//CustomField[
+    (not(description) or normalize-space(description) = '' or description = 'TODO' or description = 'TBD' or description = 'N/A') and
+    (not(inlineHelpText) or normalize-space(inlineHelpText) = '' or inlineHelpText = 'TODO' or inlineHelpText = 'TBD' or inlineHelpText = 'N/A')
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+<!-- BAD - No description or help text -->
+<CustomField>
+    <fullName>Total_Amount__c</fullName>
+    <label>Total Amount</label>
+    <type>Currency</type>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>false</required>
+</CustomField>
+
+<!-- GOOD - Has description -->
+<CustomField>
+    <fullName>Total_Amount__c</fullName>
+    <label>Total Amount</label>
+    <description>The total invoice amount including all line items, taxes, and discounts</description>
+    <type>Currency</type>
+    <precision>18</precision>
+    <scale>2</scale>
+    <required>false</required>
+</CustomField>
+
+<!-- ALSO GOOD - Has help text -->
+<CustomField>
+    <fullName>Discount_Percentage__c</fullName>
+    <label>Discount %</label>
+    <inlineHelpText>Enter the discount percentage (0-100). This will be applied to the subtotal before tax calculation.</inlineHelpText>
+    <type>Percent</type>
+    <precision>5</precision>
+    <scale>2</scale>
+    <required>false</required>
+</CustomField>
+
+<!-- BEST - Has both description and help text -->
+<CustomField>
+    <fullName>Payment_Terms__c</fullName>
+    <label>Payment Terms</label>
+    <description>Defines when payment is due for this invoice</description>
+    <inlineHelpText>Select the payment terms. Net 30 = Due in 30 days, Net 60 = Due in 60 days, Due on Receipt = Payment due immediately</inlineHelpText>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <value><fullName>Net 30</fullName></value>
+            <value><fullName>Net 60</fullName></value>
+            <value><fullName>Due on Receipt</fullName></value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
+]]>
+        </example>
+    </rule>
+
+    <!-- Rule to detect formula fields without descriptions -->
+    <rule name="EmptyFormulaFieldDescription"
+          language="xml"
+          message="Formula fields must have descriptions explaining the calculation logic."
+          class="net.sourceforge.pmd.lang.xml.rule.XPathRule">
+        
+        <description>
+            Formula fields should always have descriptions explaining what they calculate and why.
+            This is critical because the formula logic is not visible to end users.
+        </description>
+        
+        <priority>1</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//CustomField[
+    formula and
+    (not(description) or normalize-space(description) = '' or description = 'TODO' or description = 'TBD')
+]
+]]>
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Rule to detect validation rules without descriptions -->
+    <rule name="EmptyValidationRuleDescription"
+          language="xml"
+          message="Validation rules must have descriptions explaining when and why they fire."
+          class="net.sourceforge.pmd.lang.xml.rule.XPathRule">
+        
+        <description>
+            Validation rules should have clear descriptions explaining the business rule being enforced,
+            when the validation fires, and what the user needs to do to fix it.
+        </description>
+        
+        <priority>1</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//ValidationRule[
+    not(description) or 
+    normalize-space(description) = '' or
+    description = 'TODO' or
+    description = 'TBD'
+]
+]]>
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Rule to check for meaningful picklist value descriptions -->
+    <rule name="EmptyPicklistValueDescription"
+          language="xml"
+          message="Picklist values should have descriptions when the meaning is not obvious."
+          class="net.sourceforge.pmd.lang.xml.rule.XPathRule">
+        
+        <description>
+            Picklist values with non-obvious meanings should have descriptions. This is especially
+            important for coded values, abbreviations, or business-specific terms.
+        </description>
+        
+        <priority>3</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//CustomField[type='Picklist' or type='MultiselectPicklist']/valueSet/valueSetDefinition/value[
+    (matches(fullName, '^[A-Z]{2,}$') or 
+     matches(fullName, '^\d+$') or
+     matches(fullName, '^[A-Z]\d+') or
+     contains(fullName, '_')) and
+    not(description)
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+<!-- BAD - Coded value without description -->
+<value>
+    <fullName>ST01</fullName>
+    <default>false</default>
+</value>
+
+<!-- GOOD - Coded value with description -->
+<value>
+    <fullName>ST01</fullName>
+    <description>Standard shipping - 5-7 business days</description>
+    <default>false</default>
+</value>
+]]>
+        </example>
+    </rule>
+
+</ruleset>

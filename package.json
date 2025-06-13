@@ -1,0 +1,219 @@
+{
+  "name": "packageforce",
+  "displayName": "Packageforce",
+  "publisher": "RonnyRokitta",
+  "description": "Advanced Salesforce DevOps toolkit for package operations, deployments, testing, and changelog management - independent from SF CLI",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/packageforce.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/packageforce/issues"
+  },
+  "homepage": "https://github.com/yourusername/packageforce#readme",
+  "license": "MIT",
+  "icon": "icons/packageforce-icon.png",
+  "galleryBanner": {
+    "color": "#0066CC",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "salesforce",
+    "packageforce",
+    "package-force",
+    "devops",
+    "package-deployment",
+    "changelog-automation",
+    "test-execution",
+    "sf-independent",
+    "no-cli"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sfdxPkgMgr.testExtension",
+        "title": "Test Extension",
+        "category": "Packageforce"
+      },
+      {
+        "command": "sfdxPkgMgr.showPackageQuickPick",
+        "title": "Find Package",
+        "category": "Packageforce",
+        "icon": "$(search)"
+      },
+      {
+        "command": "sfdxPkgMgr.deployPackageFromCodeLens",
+        "title": "Deploy Package"
+      },
+      {
+        "command": "sfdxPkgMgr.scanPackageFromCodeLens",
+        "title": "Scan Package"
+      },
+      {
+        "command": "sfdxPkgMgr.findDuplicatesFromCodeLens",
+        "title": "Find Duplicates"
+      },
+      {
+        "command": "sfdxPkgMgr.testPackageFromCodeLens",
+        "title": "Test Package"
+      },
+      {
+        "command": "sfdxPkgMgr.updateChangelog",
+        "title": "Update Changelog",
+        "category": "Packageforce",
+        "icon": "$(history)"
+      },
+      {
+        "command": "sfdxPkgMgr.refreshPackageExplorer",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sfdxPkgMgr.scanStagedFiles",
+        "title": "Scan Staged Files",
+        "category": "Packageforce",
+        "icon": "$(search)"
+      },
+      {
+        "command": "packageforce.pool.fetch",
+        "title": "Fetch Scratch Org from Pool",
+        "category": "Packageforce",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "packageforce.pool.list",
+        "title": "List Scratch Orgs in Pool",
+        "category": "Packageforce",
+        "icon": "$(list-unordered)"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "sfdxPackageExplorer",
+          "name": "Packageforce Packages",
+          "contextualTitle": "Packageforce Package Explorer",
+          "when": "workbenchState != 'empty'"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "sfdxPkgMgr.showPackageQuickPick",
+          "when": "view == sfdxPackageExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sfdxPkgMgr.updateChangelog",
+          "when": "view == sfdxPackageExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sfdxPkgMgr.scanStagedFiles",
+          "when": "view == sfdxPackageExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "sfdxPkgMgr.refreshPackageExplorer",
+          "when": "view == sfdxPackageExplorer",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "sfdxPkgMgr.updateChangelog"
+        },
+        {
+          "command": "packageforce.pool.fetch"
+        },
+        {
+          "command": "packageforce.pool.list"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Packageforce",
+      "properties": {
+        "packageforce.pmd.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to PMD installation. If empty, Packageforce will download PMD automatically."
+        },
+        "packageforce.pmd.customRulesPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to custom PMD rules directory. Defaults to .pmd/ in workspace root."
+        },
+        "packageforce.pmd.javaPath": {
+          "type": "string",
+          "default": "java",
+          "description": "Path to Java executable. Defaults to 'java' in PATH."
+        },
+        "packageforce.scan.showDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show scan results in Problems panel."
+        },
+        "packageforce.scan.minimumPriority": {
+          "type": "number",
+          "default": 3,
+          "description": "Minimum priority for violations (1-5, where 1 is highest)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\""
+  },
+  "devDependencies": {
+    "@types/markdown-table": "^2.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.0",
+    "@types/semver": "^7.7.0",
+    "@types/unzipper": "^0.10.10",
+    "@types/vscode": "^1.100.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.25.1",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.7",
+    "webpack-cli": "^6.0.1"
+  },
+  "extensionDependencies": [
+    "salesforce.salesforcedx-vscode-core"
+  ],
+  "dependencies": {
+    "@salesforce/core": "^8.12.0",
+    "@salesforce/source-deploy-retrieve": "^12.19.10",
+    "cli-table3": "^0.6.5",
+    "markdown-table": "^3.0.4",
+    "semver": "^7.7.2",
+    "simple-git": "^3.28.0",
+    "unzipper": "^0.12.3"
+  }
+}

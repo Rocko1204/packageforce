@@ -1,0 +1,10 @@
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
+.sfdx/
+.claude
+CLAUDE.md
+RELEASE_CHECKLIST.md
+RELEASE_GUIDE.md

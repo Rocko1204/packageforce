@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Custom Test Data Factory Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Custom rules to enforce the use of test data factories in Apex test methods
+    </description>
+
+    <!-- Rule to detect direct record instantiation in test methods -->
+    <rule name="AvoidDirectRecordInstantiationInTests"
+          language="apex"
+          since="1.0"
+          message="Test methods should use data factories instead of creating records directly"
+          class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule"
+          externalInfoUrl="https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_testing_best_practices.htm">
+        
+        <description>
+            Test methods should use test data factories or builder patterns instead of directly instantiating records.
+            Direct instantiation makes tests harder to maintain and can lead to inconsistent test data.
+        </description>
+        
+        <priority>1</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//Method[
+    (Annotation/Name[@Image='isTest' or @Image='IsTest'] or 
+     parent::UserClass[Annotation/Name[@Image='isTest' or @Image='IsTest']])
+]//NewObjectExpression[
+    ClassOrInterfaceType[
+        @Image='Account' or 
+        @Image='Contact' or 
+        @Image='Lead' or 
+        @Image='Opportunity' or 
+        @Image='Case' or 
+        @Image='Task' or 
+        @Image='Event' or 
+        ends-with(@Image, '__c') or
+        ends-with(@Image, '__mdt') or
+        ends-with(@Image, '__e')
+    ]
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+// BAD - Direct instantiation in test method
+@isTest
+private class AccountServiceTest {
+    @isTest
+    static void testAccountCreation() {
+        Account acc = new Account();  // VIOLATION
+        acc.Name = 'Test Account';
+        acc.Type = 'Customer';
+        insert acc;
+        
+        Contact con = new Contact();  // VIOLATION
+        con.FirstName = 'Test';
+        con.LastName = 'Contact';
+        con.AccountId = acc.Id;
+        insert con;
+    }
+}
+
+// GOOD - Using test data factory
+@isTest
+private class AccountServiceTest {
+    @isTest
+    static void testAccountCreation() {
+        Account acc = TestDataFactory.createAccount('Test Account', true);
+        Contact con = TestDataFactory.createContact(acc.Id, 'Test', 'Contact', true);
+        
+        // Or using builder pattern
+        Account acc2 = new AccountTestDataBuilder()
+            .withName('Test Account')
+            .withType('Customer')
+            .build();
+    }
+}
+]]>
+        </example>
+    </rule>
+
+    <!-- Rule to detect test data factory usage patterns -->
+    <rule name="TestDataFactoryUsagePattern"
+          language="apex"
+          since="1.0"
+          message="Consider using a consistent test data factory pattern"
+          class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule">
+        
+        <description>
+            Detects test data factory patterns to ensure consistency across the codebase.
+            This rule helps identify when test data factories are being used correctly.
+        </description>
+        
+        <priority>3</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//Method[
+    (Annotation/Name[@Image='isTest' or @Image='IsTest'] or 
+     parent::UserClass[Annotation/Name[@Image='isTest' or @Image='IsTest']])
+]//MethodCallExpression[
+    (
+        FullMethodName[
+            contains(@Image, 'TestDataFactory') or
+            contains(@Image, 'TestFactory') or
+            contains(@Image, 'DataFactory') or
+            contains(@Image, 'Builder.build') or
+            contains(@Image, 'Builder().build')
+        ]
+    ) or (
+        PrimaryPrefix/Name[
+            contains(@Image, 'TestDataFactory') or
+            contains(@Image, 'TestFactory') or
+            contains(@Image, 'DataFactory')
+        ]
+    )
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+// GOOD - Using test data factory
+@isTest
+static void testWithDataFactory() {
+    // Factory method pattern
+    Account acc = TestDataFactory.createAccount('Test', false);
+    
+    // Builder pattern
+    Contact con = new ContactBuilder()
+        .withFirstName('John')
+        .withLastName('Doe')
+        .withAccount(acc)
+        .build();
+        
+    // Bulk data creation
+    List<Account> accounts = TestDataFactory.createAccounts(5, true);
+}
+]]>
+        </example>
+    </rule>
+
+    <!-- Rule to detect missing test data setup methods -->
+    <rule name="MissingTestDataSetupMethod"
+          language="apex"
+          since="1.0"
+          message="Test class should have a @testSetup method for common test data"
+          class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule">
+        
+        <description>
+            Test classes with multiple test methods should use @testSetup to create common test data.
+            This improves test performance and ensures consistent test data across test methods.
+        </description>
+        
+        <priority>2</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//UserClass[
+    Annotation/Name[@Image='isTest' or @Image='IsTest'] and
+    count(Method[Annotation/Name[@Image='isTest' or @Image='IsTest']]) > 2 and
+    not(Method[Annotation/Name[@Image='testSetup' or @Image='TestSetup']])
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+// BAD - Multiple test methods without @testSetup
+@isTest
+private class AccountServiceTest {
+    @isTest
+    static void test1() {
+        Account acc = TestDataFactory.createAccount('Test1', true);
+        // test logic
+    }
+    
+    @isTest
+    static void test2() {
+        Account acc = TestDataFactory.createAccount('Test2', true);
+        // test logic
+    }
+    
+    @isTest
+    static void test3() {
+        Account acc = TestDataFactory.createAccount('Test3', true);
+        // test logic
+    }
+}
+
+// GOOD - Using @testSetup for common data
+@isTest
+private class AccountServiceTest {
+    @testSetup
+    static void setup() {
+        List<Account> accounts = TestDataFactory.createAccounts(3, true);
+    }
+    
+    @isTest
+    static void test1() {
+        Account acc = [SELECT Id FROM Account LIMIT 1];
+        // test logic
+    }
+    
+    @isTest
+    static void test2() {
+        List<Account> accounts = [SELECT Id FROM Account];
+        // test logic
+    }
+}
+]]>
+        </example>
+    </rule>
+
+</ruleset>

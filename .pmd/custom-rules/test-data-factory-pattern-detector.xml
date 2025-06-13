@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Test Data Factory Pattern Detector"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Rules to detect and enforce proper test data factory patterns in Apex
+    </description>
+
+    <!-- Rule to detect proper test data factory implementation -->
+    <rule name="TestDataFactoryImplementation"
+          language="apex"
+          since="1.0"
+          message="Test data factory should follow established patterns"
+          class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule">
+        
+        <description>
+            Ensures test data factories follow best practices:
+            - Should be in a separate class
+            - Methods should be static
+            - Should have parameters for required fields
+            - Should have a boolean parameter for DML operations
+            - Should return the created record(s)
+        </description>
+        
+        <priority>2</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//UserClass[
+    contains(@Image, 'TestDataFactory') or 
+    contains(@Image, 'TestFactory') or 
+    contains(@Image, 'DataFactory')
+]//Method[
+    not(ModifierNode[@Static='true']) and
+    not(Annotation/Name[@Image='isTest' or @Image='IsTest'])
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+// GOOD - Proper test data factory implementation
+public class TestDataFactory {
+    
+    // Single record creation with DML option
+    public static Account createAccount(String name, Boolean doInsert) {
+        Account acc = new Account(
+            Name = name,
+            Type = 'Customer',
+            Industry = 'Technology'
+        );
+        
+        if (doInsert) {
+            insert acc;
+        }
+        
+        return acc;
+    }
+    
+    // Bulk record creation
+    public static List<Account> createAccounts(Integer count, Boolean doInsert) {
+        List<Account> accounts = new List<Account>();
+        
+        for (Integer i = 0; i < count; i++) {
+            accounts.add(new Account(
+                Name = 'Test Account ' + i,
+                Type = 'Customer'
+            ));
+        }
+        
+        if (doInsert) {
+            insert accounts;
+        }
+        
+        return accounts;
+    }
+    
+    // Related record creation
+    public static Contact createContact(Id accountId, String firstName, String lastName, Boolean doInsert) {
+        Contact con = new Contact(
+            FirstName = firstName,
+            LastName = lastName,
+            AccountId = accountId,
+            Email = firstName.toLowerCase() + '.' + lastName.toLowerCase() + '@test.example.com'
+        );
+        
+        if (doInsert) {
+            insert con;
+        }
+        
+        return con;
+    }
+}
+]]>
+        </example>
+    </rule>
+
+    <!-- Rule to detect builder pattern implementation -->
+    <rule name="TestDataBuilderPattern"
+          language="apex"
+          since="1.0"
+          message="Test data builders should follow the builder pattern"
+          class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule">
+        
+        <description>
+            Detects and validates test data builder pattern implementations.
+            Builders should have fluent interface methods and a build() method.
+        </description>
+        
+        <priority>3</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//UserClass[
+    contains(@Image, 'Builder') or 
+    contains(@Image, 'TestBuilder')
+]//Method[
+    (starts-with(@Image, 'with') or @Image='build') and
+    not(@Image='withoutId')
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+// GOOD - Builder pattern implementation
+public class AccountBuilder {
+    private Account account;
+    
+    public AccountBuilder() {
+        // Set defaults
+        this.account = new Account(
+            Type = 'Customer',
+            Industry = 'Technology'
+        );
+    }
+    
+    public AccountBuilder withName(String name) {
+        this.account.Name = name;
+        return this;
+    }
+    
+    public AccountBuilder withType(String type) {
+        this.account.Type = type;
+        return this;
+    }
+    
+    public AccountBuilder withIndustry(String industry) {
+        this.account.Industry = industry;
+        return this;
+    }
+    
+    public AccountBuilder withBillingAddress(String street, String city, String state) {
+        this.account.BillingStreet = street;
+        this.account.BillingCity = city;
+        this.account.BillingState = state;
+        return this;
+    }
+    
+    public Account build() {
+        return this.account;
+    }
+    
+    public Account buildAndInsert() {
+        insert this.account;
+        return this.account;
+    }
+}
+
+// Usage in tests
+@isTest
+static void testAccountBuilder() {
+    Account acc = new AccountBuilder()
+        .withName('Acme Corp')
+        .withType('Partner')
+        .withIndustry('Manufacturing')
+        .buildAndInsert();
+        
+    System.assertNotEquals(null, acc.Id);
+}
+]]>
+        </example>
+    </rule>
+
+    <!-- Rule to detect factory method naming conventions -->
+    <rule name="TestDataFactoryNamingConvention"
+          language="apex"
+          since="1.0"
+          message="Test data factory methods should follow naming conventions"
+          class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule">
+        
+        <description>
+            Test data factory methods should follow consistent naming conventions:
+            - create[ObjectName] for single records
+            - create[ObjectName]s for multiple records
+            - create[ObjectName]With[Relationship] for related records
+        </description>
+        
+        <priority>4</priority>
+        
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//UserClass[
+    contains(@Image, 'TestDataFactory') or 
+    contains(@Image, 'TestFactory') or 
+    contains(@Image, 'DataFactory')
+]//Method[
+    not(starts-with(@Image, 'create')) and
+    not(starts-with(@Image, 'build')) and
+    not(starts-with(@Image, 'make')) and
+    not(@Image='getInstance') and
+    not(Annotation/Name[@Image='isTest' or @Image='IsTest'])
+]
+]]>
+                </value>
+            </property>
+        </properties>
+        
+        <example>
+<![CDATA[
+// GOOD - Proper naming conventions
+public class TestDataFactory {
+    // Single record
+    public static Account createAccount(String name, Boolean doInsert) { }
+    
+    // Multiple records
+    public static List<Account> createAccounts(Integer count, Boolean doInsert) { }
+    
+    // Related records
+    public static Account createAccountWithContacts(String accountName, Integer contactCount, Boolean doInsert) { }
+    
+    // Complex setup
+    public static Map<String, SObject> createAccountHierarchy(Integer levels, Boolean doInsert) { }
+}
+
+// BAD - Poor naming conventions
+public class TestDataFactory {
+    public static Account getAccount() { }  // Should be createAccount
+    public static List<Account> accountList() { }  // Should be createAccounts
+    public static void setupData() { }  // Too generic
+}
+]]>
+        </example>
+    </rule>
+
+</ruleset>

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Packageforce Complete Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    
+    <description>
+        Complete ruleset for Packageforce including custom data factory rule and selected built-in rules (PMD 7.x compatible)
+    </description>
+
+    <!-- Custom Test Data Factory Rule with CRITICAL Priority -->
+    <rule name="AvoidDirectRecordInstantiationInTests"
+          language="apex"
+          message="CRITICAL: Test methods should use data factories instead of creating records directly. Direct instantiation breaks when adding validation rules."
+          class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule">
+        <priority>1</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//Method[
+    (Annotation/Name[@Image='isTest' or @Image='IsTest'] or 
+     parent::UserClass[Annotation/Name[@Image='isTest' or @Image='IsTest']])
+]//NewObjectExpression[
+    ClassOrInterfaceType[
+        @Image='Account' or 
+        @Image='Contact' or 
+        @Image='Lead' or 
+        @Image='Opportunity' or 
+        @Image='Case' or 
+        @Image='Task' or 
+        @Image='Event' or 
+        @Image='User' or
+        @Image='Product2' or
+        @Image='PricebookEntry' or
+        @Image='OpportunityLineItem' or
+        ends-with(@Image, '__c') or
+        ends-with(@Image, '__mdt') or
+        ends-with(@Image, '__e') or
+        ends-with(@Image, '__b') or
+        ends-with(@Image, '__x') or
+        ends-with(@Image, '__Share') or
+        ends-with(@Image, '__History')
+    ]
+]
+]]>
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Performance Rules - CRITICAL -->
+    <rule ref="category/apex/performance.xml/OperationWithLimitsInLoop">
+        <priority>1</priority>
+    </rule>
+    <rule ref="category/apex/performance.xml/AvoidDmlStatementsInLoops">
+        <priority>1</priority>
+    </rule>
+
+    <!-- Security Rules - CRITICAL -->
+    <rule ref="category/apex/security.xml/ApexCRUDViolation">
+        <priority>1</priority>
+    </rule>
+    <rule ref="category/apex/security.xml/ApexSharingViolations">
+        <priority>1</priority>
+    </rule>
+    <rule ref="category/apex/security.xml/ApexInsecureEndpoint">
+        <priority>1</priority>
+    </rule>
+    <rule ref="category/apex/security.xml/ApexXSSFromURLParam">
+        <priority>1</priority>
+    </rule>
+    <rule ref="category/apex/security.xml/ApexXSSFromEscapeFalse">
+        <priority>1</priority>
+    </rule>
+
+    <!-- Best Practices - HIGH -->
+    <rule ref="category/apex/bestpractices.xml/AvoidLogicInTrigger">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/apex/bestpractices.xml/ApexUnitTestClassShouldHaveAsserts">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/apex/bestpractices.xml/ApexUnitTestShouldNotUseSeeAllDataTrue">
+        <priority>2</priority>
+    </rule>
+
+    <!-- Error Prone - HIGH -->
+    <rule ref="category/apex/errorprone.xml/EmptyCatchBlock">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/apex/errorprone.xml/EmptyIfStmt">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/apex/errorprone.xml/EmptyWhileStmt">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/apex/errorprone.xml/EmptyTryOrFinallyBlock">
+        <priority>2</priority>
+    </rule>
+    <rule ref="category/apex/errorprone.xml/AvoidNonExistentAnnotations">
+        <priority>2</priority>
+    </rule>
+
+    <!-- Code Style - MEDIUM -->
+    <rule ref="category/apex/codestyle.xml/ClassNamingConventions">
+        <priority>3</priority>
+        <properties>
+            <property name="testClassPattern" value="[A-Z][a-zA-Z0-9_]*Test" />
+            <property name="classPattern" value="[A-Z][a-zA-Z0-9_]*" />
+        </properties>
+    </rule>
+    <rule ref="category/apex/codestyle.xml/MethodNamingConventions">
+        <priority>3</priority>
+    </rule>
+    <rule ref="category/apex/codestyle.xml/VariableNamingConventions">
+        <priority>3</priority>
+    </rule>
+
+    <!-- Design Rules - MEDIUM -->
+    <rule ref="category/apex/design.xml/ExcessiveClassLength">
+        <priority>3</priority>
+        <properties>
+            <property name="minimum" value="1000" />
+        </properties>
+    </rule>
+    <rule ref="category/apex/design.xml/ExcessiveParameterList">
+        <priority>3</priority>
+        <properties>
+            <property name="minimum" value="5" />
+        </properties>
+    </rule>
+    <rule ref="category/apex/design.xml/CyclomaticComplexity">
+        <priority>3</priority>
+        <properties>
+            <property name="classReportLevel" value="40" />
+            <property name="methodReportLevel" value="10" />
+        </properties>
+    </rule>
+    <rule ref="category/apex/design.xml/CognitiveComplexity">
+        <priority>3</priority>
+        <properties>
+            <property name="classReportLevel" value="50" />
+            <property name="methodReportLevel" value="15" />
+        </properties>
+    </rule>
+
+    <!-- Metadata Documentation Rules - HIGH -->
+    <rule name="EmptyObjectDescription"
+          language="xml"
+          message="Object must have a description. Empty descriptions make it difficult to understand the purpose of custom objects."
+          class="net.sourceforge.pmd.lang.xml.rule.XPathRule">
+        <priority>2</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//CustomObject[
+    not(description) or 
+    normalize-space(description) = '' or
+    description = 'TODO' or
+    description = 'TBD' or
+    description = 'N/A'
+]
+]]>
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+    <rule name="EmptyFieldDescription"
+          language="xml"
+          message="Field must have a description or help text. Fields without descriptions are difficult to understand and use correctly."
+          class="net.sourceforge.pmd.lang.xml.rule.XPathRule">
+        <priority>2</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+<![CDATA[
+//CustomField[
+    (not(description) or normalize-space(description) = '' or description = 'TODO' or description = 'TBD' or description = 'N/A') and
+    (not(inlineHelpText) or normalize-space(inlineHelpText) = '' or inlineHelpText = 'TODO' or inlineHelpText = 'TBD' or inlineHelpText = 'N/A')
+]
+]]>
+                </value>
+            </property>
+        </properties>
+    </rule>
+    
+</ruleset>
