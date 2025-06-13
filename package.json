@@ -3,7 +3,7 @@
   "displayName": "Packageforce",
   "publisher": "Rocko1204",
   "description": "Advanced Salesforce DevOps toolkit for package operations, deployments, testing, and changelog management - independent from SF CLI",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/yourusername/packageforce.git"
