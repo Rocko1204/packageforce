@@ -15,3 +15,7 @@
 *.gif binary
 *.ico binary
 *.vsix binary
+*.mov binary
+*.mp4 binary
+*.avi binary
+*.webm binary

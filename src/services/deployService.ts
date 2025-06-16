@@ -4,6 +4,7 @@ import {
   ConfigAggregator,
   Org,
   SfError,
+  StateAggregator,
 } from '@salesforce/core';
 import {
   ComponentSet,
@@ -133,10 +134,24 @@ export class DeployService {
     if (!orgAlias) {
       // Try to get default org
       try {
+        // Clear any cached state to ensure we get the latest configuration
+        // This is necessary when the default org is changed via VS Code Salesforce CLI
+        StateAggregator.clearInstance();
+
+        // Create a fresh ConfigAggregator instance to ensure we get the latest config
         const aggregator = await ConfigAggregator.create();
+
+        // Force reload the config to ensure we have the latest values
+        await aggregator.reload();
+
         const defaultOrgAlias = aggregator.getPropertyValue(
           'target-org'
         ) as string;
+
+        // Log the resolved default org for debugging
+        DeployLogger.trace(
+          `Resolved default org from config: ${defaultOrgAlias || 'none'}`
+        );
 
         if (!defaultOrgAlias) {
           // No default org set, try to use the first available org

@@ -65,7 +65,7 @@ code --install-extension packageforce-*.vsix
   - Scan staged files (global action)
   - Refresh package list
 
-![Package View Demo](public/package_view.mov)
+![Package View Demo](./public/package_view.gif)
 
 ### Package Deployment
 - Deploy packages directly from VS Code without SF CLI
@@ -82,7 +82,7 @@ code --install-extension packageforce-*.vsix
 - Detailed error reporting with component-level failure details
 - Support for all Salesforce metadata types
 
-![Deploy Demo](public/deploy.mov)
+![Deploy Demo](./public/deploy.gif)
 
 ### Duplicate Code Detection
 - Find duplicate code across your entire repository
@@ -106,7 +106,7 @@ code --install-extension packageforce-*.vsix
   - Internal duplicates shown as warnings
   - Export reports in multiple formats
 
-![Duplicate Demo](public/duplicate.mov)
+![Duplicate Demo](./public/duplicate.gif)
 
 ### Test Execution (SF CLI Independent)
 - Run all test classes in a package without requiring SF CLI
@@ -124,7 +124,7 @@ code --install-extension packageforce-*.vsix
   - Progress updates during async execution
 - Beautiful output formatting in dedicated output channel
 
-![Tests Demo](public/tests.mov)
+![Tests Demo](./public/tests.gif)
 
 ### Changelog Management
 - Update package changelogs from staged Git files
@@ -139,7 +139,7 @@ code --install-extension packageforce-*.vsix
   - README files with changelog tables
   - Stages all updated files for commit
 
-![Changelog Demo](public/changelog.mov)
+![Changelog Demo](./public/changelog.gif)
 
 ### Code Scanning with PMD
 - Integrated PMD code analyzer for Apex, Visualforce, and Lightning
@@ -173,7 +173,7 @@ code --install-extension packageforce-*.vsix
   - Click to navigate to violations
   - Detailed violation descriptions
 
-![Scan Demo](public/scan.mov)
+![Scan Demo](./public/scan.gif)
 
 ## Commands
 
@@ -254,19 +254,19 @@ Configure Packageforce in VS Code settings:
 ```json
 {
   // Path to PMD installation (optional - will auto-download if not set)
-  "forceOps.pmd.path": "/path/to/pmd",
+  "packageforce.pmd.path": "/path/to/pmd",
   
   // Custom PMD rules directory (defaults to .pmd/)
-  "forceOps.pmd.customRulesPath": ".pmd/",
+  "packageforce.pmd.customRulesPath": ".pmd/",
   
   // Java executable path
-  "forceOps.pmd.javaPath": "java",
+  "packageforce.pmd.javaPath": "java",
   
   // Show scan results in Problems panel
-  "forceOps.scan.showDiagnostics": true,
+  "packageforce.scan.showDiagnostics": true,
   
   // Minimum priority for violations (1-5)
-  "forceOps.scan.minimumPriority": 3
+  "packageforce.scan.minimumPriority": 3
 }
 ```
 

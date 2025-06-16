@@ -1,7 +1,12 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Connection, AuthInfo, ConfigAggregator } from '@salesforce/core';
+import {
+  Connection,
+  AuthInfo,
+  ConfigAggregator,
+  StateAggregator,
+} from '@salesforce/core';
 import { MetadataResolver } from '@salesforce/source-deploy-retrieve';
 import { Logger } from '../utils/logger';
 
@@ -193,7 +198,16 @@ export class TestService {
     if (!username) {
       // Try to get the default org
       try {
+        // Clear any cached state to ensure we get the latest configuration
+        // This is necessary when the default org is changed via VS Code Salesforce CLI
+        StateAggregator.clearInstance();
+
+        // Create a fresh ConfigAggregator instance to ensure we get the latest config
         const aggregator = await ConfigAggregator.create();
+
+        // Force reload the config to ensure we have the latest values
+        await aggregator.reload();
+
         const defaultOrgAlias = aggregator.getPropertyValue('target-org');
 
         if (defaultOrgAlias && typeof defaultOrgAlias === 'string') {
