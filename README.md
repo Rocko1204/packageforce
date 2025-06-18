@@ -6,7 +6,7 @@
 [![Downloads](https://img.shields.io/visual-studio-marketplace/d/RonnyRokitta.packageforce)](https://marketplace.visualstudio.com/items?itemName=RonnyRokitta.packageforce)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Advanced Salesforce DevOps toolkit for package operations, deployments, testing, and changelog management - completely independent from SF CLI.
+Advanced Salesforce DevOps toolkit for package operations, deployments, testing, and changelog management - 100% standalone, no SF CLI or Salesforce extensions required!
 
 > **Note**: The animated demos in this README may not display properly in VS Code's markdown preview. 
 > For the best viewing experience, please view this README on [GitHub](https://github.com/Rocko1204/packageforce) 

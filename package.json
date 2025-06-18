@@ -3,7 +3,7 @@
   "displayName": "Packageforce",
   "publisher": "Rocko1204",
   "description": "Advanced Salesforce DevOps toolkit for package operations, deployments, testing, and changelog management - independent from SF CLI",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/Rocko1204/packageforce.git"
@@ -207,9 +207,6 @@
     "webpack-cli": "^6.0.1",
     "webpack-node-externals": "^3.0.0"
   },
-  "extensionDependencies": [
-    "salesforce.salesforcedx-vscode-core"
-  ],
   "dependencies": {
     "@salesforce/core": "^8.12.0",
     "@salesforce/source-deploy-retrieve": "^12.19.10",

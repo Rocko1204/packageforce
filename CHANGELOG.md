@@ -4,6 +4,18 @@ All notable changes to the "Packageforce" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.2] - 2025-06-18
+
+### Changed
+- Removed extensionDependencies on Salesforce extensions - Packageforce is now 100% standalone
+- True independence from SF CLI and Salesforce VS Code extensions
+
+### Benefits
+- Faster installation (no dependent extensions required)
+- Lighter weight extension
+- No conflicts with Salesforce extension versions
+- Complete standalone operation
+
 ## [1.0.1] - 2025-06-18
 
 ### Fixed
