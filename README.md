@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/Rocko1204/packageforce/actions/workflows/ci.yml/badge.svg)](https://github.com/Rocko1204/packageforce/actions/workflows/ci.yml)
 [![Release](https://github.com/Rocko1204/packageforce/actions/workflows/release.yml/badge.svg)](https://github.com/Rocko1204/packageforce/actions/workflows/release.yml)
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/RonnyRokitta.packageforce)](https://marketplace.visualstudio.com/items?itemName=RonnyRokitta.packageforce)
-[![Downloads](https://img.shields.io/visual-studio-marketplace/d/RonnyRokitta.packageforce)](https://marketplace.visualstudio.com/items?itemName=RonnyRokitta.packageforce)
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/Rocko1204.packageforce)](https://marketplace.visualstudio.com/items?itemName=Rocko1204.packageforce)
+[![Downloads](https://img.shields.io/visual-studio-marketplace/d/Rocko1204.packageforce)](https://marketplace.visualstudio.com/items?itemName=Rocko1204.packageforce)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Advanced Salesforce DevOps toolkit for package operations, deployments, testing, and changelog management - 100% standalone, no SF CLI or Salesforce extensions required!
