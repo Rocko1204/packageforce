@@ -97,6 +97,10 @@ export class TestService {
       vscode.window.createOutputChannel('Packageforce Tests');
   }
 
+  public showOutput(): void {
+    this.outputChannel.show();
+  }
+
   public async runTestsWithCoverage(options: TestOptions): Promise<TestResult> {
     this.outputChannel.clear();
     this.outputChannel.show();

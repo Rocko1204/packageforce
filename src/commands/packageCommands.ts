@@ -294,8 +294,10 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
     return;
   }
 
-  // Prepare scan options
+  // Get scan service instance (moved to outer scope for error handling)
   const scanService = ScanService.getInstance();
+
+  // Prepare scan options
   const scanOptions: ScanOptions = {
     packagePath: packagePath,
     packageName: packageName,
@@ -338,6 +340,9 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
     'packageforce.scanner'
   );
 
+  let scanResult: any = null;
+  let scanError: Error | undefined;
+
   // Run scan with progress
   await vscode.window.withProgress(
     {
@@ -354,6 +359,13 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
         }
 
         progress.report({ increment: 20, message: 'Loading configuration...' });
+
+        // Log scan configuration for debugging
+        logger.info(`Starting scan with options:`, scanOptions);
+        scanService.outputChannel.appendLine(
+          `Scan options: ${JSON.stringify(scanOptions, null, 2)}`
+        );
+
         await scanService.loadWorkspaceConfiguration();
 
         if (token.isCancellationRequested) {
@@ -382,34 +394,96 @@ export async function scanPackageFromCodeLens(packageInfo: any) {
 
         progress.report({ increment: 100, message: 'Analysis complete!' });
 
-        // Show summary
-        const violationSummary =
-          result.totalViolations === 0
-            ? 'No violations found!'
-            : `Found ${result.totalViolations} violation${result.totalViolations === 1 ? '' : 's'}`;
-
-        const actions = ['View Output', 'Save to Package', 'Export Report'];
-        const action = await vscode.window.showInformationMessage(
-          `Code analysis for "${packageName}" completed. ${violationSummary}`,
-          ...actions
-        );
-
-        if (action === 'View Output') {
-          scanService.outputChannel.show();
-        } else if (action === 'Save to Package') {
-          await saveScanResultsToPackage(result, packagePath, scanService);
-        } else if (action === 'Export Report') {
-          await exportScanReport(result, workspaceFolder.uri.fsPath);
-        }
+        // Store result for processing after progress completes
+        scanResult = result;
       } catch (error) {
         diagnostics.dispose();
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        scanError = error instanceof Error ? error : new Error(String(error));
         logger.error(`Scan failed for ${packageName}:`, error);
-        vscode.window.showErrorMessage(`Scan failed: ${errorMessage}`);
       }
     }
   );
+
+  // Handle results after progress notification is closed
+  if (scanError) {
+    // Get the full output from the scan service
+    const scanOutput = scanService.getOutputBuffer();
+
+    // Create error result object for saving
+    const errorResult = {
+      packageName: packageName,
+      packagePath: packagePath,
+      totalViolations: -1, // Indicates error
+      violations: [],
+      errors: [
+        {
+          file: 'SCAN_ERROR',
+          message: scanError.message,
+        },
+      ],
+      scanDuration: 0,
+      timestamp: new Date(),
+      errorDetails: scanOutput || scanError.stack || scanError.message,
+    };
+
+    // Show error with options to view output or save error log
+    const action = await vscode.window.showErrorMessage(
+      `Scan failed: ${scanError.message}`,
+      'View Output',
+      'Save Error Log'
+    );
+
+    if (action === 'View Output') {
+      // Show the scan service output channel
+      scanService.outputChannel.show();
+      logger.info('User clicked View Output for scan error');
+    } else if (action === 'Save Error Log') {
+      logger.info('User clicked Save Error Log for scan error');
+      await saveScanResultsToPackage(errorResult, packagePath, scanService);
+    }
+
+    return;
+  }
+
+  if (!scanResult) {
+    // Scan was cancelled
+    return;
+  }
+
+  // Show summary
+  const violationSummary =
+    scanResult.totalViolations === 0
+      ? 'No violations found!'
+      : `Found ${scanResult.totalViolations} violation${scanResult.totalViolations === 1 ? '' : 's'}`;
+
+  if (scanResult.totalViolations === 0) {
+    const actions = ['View Output', 'Save to Package'];
+    const action = await vscode.window.showInformationMessage(
+      `Code analysis for "${packageName}" completed. ${violationSummary}`,
+      ...actions
+    );
+
+    if (action === 'View Output') {
+      scanService.outputChannel.show();
+    } else if (action === 'Save to Package') {
+      await saveScanResultsToPackage(scanResult, packagePath, scanService);
+    }
+  } else {
+    // Show error for violations found
+    const actions = ['View Output', 'Save to Package', 'Export Report'];
+    const action = await vscode.window.showErrorMessage(
+      `⚠️ Code analysis for "${packageName}" completed with warnings. ${violationSummary}`,
+      ...actions
+    );
+
+    if (action === 'View Output') {
+      scanService.outputChannel.show();
+    } else if (action === 'Save to Package') {
+      await saveScanResultsToPackage(scanResult, packagePath, scanService);
+    } else if (action === 'Export Report') {
+      await exportScanReport(scanResult, workspaceFolder.uri.fsPath);
+    }
+  }
 }
 
 async function showScanCustomOptions(): Promise<
@@ -606,6 +680,39 @@ async function exportScanReport(
 }
 
 function generateHTMLReport(result: any): string {
+  // Check if this is an error result
+  if (result.totalViolations === -1) {
+    const errorHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Scan Error - ${result.packageName}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #d32f2f; }
+        .error { background: #ffebee; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #d32f2f; }
+        .stack-trace { background: #f5f5f5; padding: 10px; border-radius: 3px; font-family: monospace; white-space: pre-wrap; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>❌ Code Scan Failed - ${result.packageName}</h1>
+    <div class="error">
+        <p><strong>Status:</strong> Scan Failed</p>
+        <p><strong>Error Date:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+        ${result.errors && result.errors.length > 0 ? `<p><strong>Error Message:</strong> ${result.errors[0].message}</p>` : ''}
+    </div>
+    ${
+      result.errorDetails
+        ? `
+    <h2>Stack Trace</h2>
+    <div class="stack-trace">${escapeHtml(result.errorDetails)}</div>
+    `
+        : ''
+    }
+</body>
+</html>`;
+    return errorHtml;
+  }
+
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -665,6 +772,24 @@ function generateHTMLViolations(violations: any[]): string {
 }
 
 function generateCSVReport(result: any): string {
+  // Check if this is an error result
+  if (result.totalViolations === -1) {
+    const headers = ['Status', 'Package', 'Date', 'Error'];
+    const rows = [headers.join(',')];
+    const errorMessage =
+      result.errors && result.errors.length > 0
+        ? result.errors[0].message
+        : 'Unknown error';
+    const row = [
+      '"Failed"',
+      `"${result.packageName}"`,
+      `"${new Date(result.timestamp).toISOString()}"`,
+      `"${errorMessage.replace(/"/g, '""')}"`,
+    ];
+    rows.push(row.join(','));
+    return rows.join('\n');
+  }
+
   const headers = ['File', 'Line', 'Priority', 'Rule', 'Message'];
   const rows = [headers.join(',')];
 
@@ -684,6 +809,27 @@ function generateCSVReport(result: any): string {
 
 function generateMarkdownReport(result: any): string {
   let md = `# Code Scan Report - ${result.packageName}\n\n`;
+
+  // Check if this is an error result
+  if (result.totalViolations === -1) {
+    md += `**Status:** ❌ Scan Failed  \n`;
+    md += `**Error Date:** ${new Date(result.timestamp).toLocaleString()}  \n\n`;
+    md += `## Error Details\n\n`;
+
+    if (result.errors && result.errors.length > 0) {
+      md += `**Error Message:** ${result.errors[0].message}\n\n`;
+    }
+
+    if (result.errorDetails) {
+      md += `### Stack Trace\n\n`;
+      md += '```\n';
+      md += result.errorDetails;
+      md += '\n```\n';
+    }
+
+    return md;
+  }
+
   md += `**Total Violations:** ${result.totalViolations}  \n`;
   md += `**Scan Date:** ${new Date(result.timestamp).toLocaleString()}  \n`;
   md += `**Scan Duration:** ${result.scanDuration}ms  \n\n`;
@@ -1424,10 +1570,7 @@ export async function testPackageFromCodeLens(packageInfo: any) {
         );
 
         if (selection === 'View Output') {
-          vscode.commands.executeCommand(
-            'workbench.action.output.show',
-            'Packageforce Tests'
-          );
+          testService.showOutput();
         }
       } else {
         const actions = ['View Output'];
@@ -1437,10 +1580,7 @@ export async function testPackageFromCodeLens(packageInfo: any) {
         );
 
         if (selection === 'View Output') {
-          vscode.commands.executeCommand(
-            'workbench.action.output.show',
-            'Packageforce Tests'
-          );
+          testService.showOutput();
         }
       }
     }

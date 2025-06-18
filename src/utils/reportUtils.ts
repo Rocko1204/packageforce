@@ -129,6 +129,27 @@ export class ReportUtils {
   ): string {
     let md = `# Code Scan Results - ${result.packageName}\n\n`;
 
+    // Check if this is an error result
+    if (result.totalViolations === -1) {
+      md += `## ❌ Scan Failed\n\n`;
+      md += `- **Package Path:** ${result.packagePath}\n`;
+      md += `- **Error Date:** ${result.timestamp.toLocaleString()}\n\n`;
+
+      if (result.errors && result.errors.length > 0) {
+        md += `### Error Message\n\n`;
+        md += `${result.errors[0].message}\n\n`;
+      }
+
+      if ((result as any).errorDetails) {
+        md += `### Error Details\n\n`;
+        md += '```\n';
+        md += (result as any).errorDetails;
+        md += '\n```\n';
+      }
+
+      return md;
+    }
+
     if (options.includeMetadata !== false) {
       md += `## Summary\n\n`;
       md += `- **Total Violations:** ${result.totalViolations}\n`;

@@ -72,6 +72,7 @@ export class ScanService {
   private readonly PMD_VERSION = '7.8.0';
   private readonly PMD_DOWNLOAD_BASE =
     'https://github.com/pmd/pmd/releases/download';
+  private outputBuffer: string[] = [];
 
   private constructor() {
     this.outputChannel = vscode.window.createOutputChannel(
@@ -85,6 +86,28 @@ export class ScanService {
       ScanService.instance = new ScanService();
     }
     return ScanService.instance;
+  }
+
+  /**
+   * Get the current output buffer content
+   */
+  public getOutputBuffer(): string {
+    return this.outputBuffer.join('\n');
+  }
+
+  /**
+   * Clear the output buffer
+   */
+  private clearOutputBuffer(): void {
+    this.outputBuffer = [];
+  }
+
+  /**
+   * Append to output channel and buffer
+   */
+  private appendOutput(text: string): void {
+    this.outputChannel.appendLine(text);
+    this.outputBuffer.push(text);
   }
 
   private getDefaultPMDConfig(): PMDConfiguration {
@@ -113,12 +136,11 @@ export class ScanService {
   public async scanPackage(options: ScanOptions): Promise<ScanResult> {
     const startTime = Date.now();
     logger.info(`Starting PMD scan for package: ${options.packageName}`);
+    this.clearOutputBuffer(); // Clear buffer at start of scan
     this.outputChannel.show(true); // Show output channel and preserve focus
-    this.outputChannel.appendLine(
-      `\n=== Scanning package: ${options.packageName} ===`
-    );
-    this.outputChannel.appendLine(`Path: ${options.packagePath}`);
-    this.outputChannel.appendLine(`Timestamp: ${new Date().toISOString()}\n`);
+    this.appendOutput(`\n=== Scanning package: ${options.packageName} ===`);
+    this.appendOutput(`Path: ${options.packagePath}`);
+    this.appendOutput(`Timestamp: ${new Date().toISOString()}\n`);
 
     try {
       // Ensure PMD is installed
@@ -172,7 +194,12 @@ export class ScanService {
         error instanceof Error ? error.message : String(error);
       logger.error(`PMD scan failed for ${options.packageName}:`, error);
 
-      this.outputChannel.appendLine(`\n❌ Scan failed: ${errorMessage}`);
+      this.appendOutput(`\n❌ Scan failed: ${errorMessage}`);
+
+      // Include stack trace if available
+      if (error instanceof Error && error.stack) {
+        this.appendOutput(`\nStack trace:\n${error.stack}`);
+      }
 
       throw new Error(
         `Scan failed for package ${options.packageName}: ${errorMessage}`
@@ -184,13 +211,19 @@ export class ScanService {
    * Ensure PMD is installed, download if necessary
    */
   public async ensurePMDInstalled(): Promise<void> {
+    this.appendOutput('Checking PMD installation...');
+    logger.info(`Checking for PMD at: ${this.pmdConfig.executablePath}`);
+
     if (await this.isPMDInstalled()) {
       logger.debug('PMD is already installed');
+      this.appendOutput('✓ PMD is already installed');
       return;
     }
 
     logger.info('PMD not found, downloading...');
-    this.outputChannel.appendLine('PMD not found locally. Downloading...');
+    this.appendOutput('PMD not found locally. Downloading...');
+    this.appendOutput(`Download URL: ${this.pmdConfig.downloadUrl}`);
+    this.appendOutput(`Install path: ${this.pmdConfig.installPath}`);
 
     await this.downloadAndInstallPMD();
   }
@@ -230,13 +263,11 @@ export class ScanService {
       await fs.promises.mkdir(this.pmdConfig.installPath, { recursive: true });
 
       // Download PMD
-      this.outputChannel.appendLine(
-        `Downloading PMD ${this.pmdConfig.version}...`
-      );
+      this.appendOutput(`Downloading PMD ${this.pmdConfig.version}...`);
       await this.downloadFile(this.pmdConfig.downloadUrl, zipPath);
 
       // Extract PMD to parent directory (the zip contains pmd-bin-VERSION folder)
-      this.outputChannel.appendLine('Extracting PMD...');
+      this.appendOutput('Extracting PMD...');
       const parentDir = path.dirname(this.pmdConfig.installPath);
       await this.extractZip(zipPath, parentDir);
 
@@ -245,7 +276,7 @@ export class ScanService {
         await fs.promises.chmod(this.pmdConfig.executablePath, 0o755);
       }
 
-      this.outputChannel.appendLine('✅ PMD installed successfully');
+      this.appendOutput('✅ PMD installed successfully');
       logger.info('PMD installed successfully');
     } catch (error) {
       const errorMessage =
@@ -441,7 +472,8 @@ export class ScanService {
         '-f',
         options.format || 'xml',
         '--use-version',
-        'apex-60' // Salesforce API version
+        'apex-60', // Salesforce API version
+        '--no-progress' // Disable progress bar for cleaner output
       );
 
       // Add optional parameters
@@ -466,6 +498,9 @@ export class ScanService {
       }
 
       logger.debug(`Running PMD with args: ${args.join(' ')}`);
+      this.appendOutput(`\nRunning PMD:`);
+      this.appendOutput(`Command: ${this.pmdConfig.executablePath}`);
+      this.appendOutput(`Arguments: ${args.join(' ')}`);
 
       const pmdProcess = spawn(this.pmdConfig.executablePath, args);
       let stdout = '';
@@ -476,19 +511,44 @@ export class ScanService {
       });
 
       pmdProcess.stderr.on('data', data => {
-        stderr += data.toString();
+        const stderrData = data.toString();
+        stderr += stderrData;
+        // Log warnings from PMD to output
+        if (stderrData.includes('[WARN]')) {
+          this.appendOutput(`\nPMD Warning: ${stderrData.trim()}`);
+        }
       });
 
       pmdProcess.on('close', code => {
-        // PMD returns 4 if violations found, 0 if none
+        // PMD exit codes:
+        // 0 = success, no violations
+        // 4 = violations found
+        // 5 = errors during analysis (but may have partial results)
         if (code === 0 || code === 4) {
+          this.appendOutput(
+            `\nPMD completed successfully (exit code: ${code})`
+          );
+          resolve(stdout);
+        } else if (code === 5) {
+          // PMD encountered errors but may have partial results
+          this.appendOutput(
+            `\n⚠️ PMD completed with errors (exit code: ${code})`
+          );
+          this.appendOutput(`Warnings/Errors: ${stderr}`);
+          // Still resolve with stdout which may contain partial results
           resolve(stdout);
         } else {
+          this.appendOutput(`\n❌ PMD failed with exit code ${code}`);
+          this.appendOutput(`Error output: ${stderr}`);
           reject(new Error(`PMD exited with code ${code}: ${stderr}`));
         }
       });
 
       pmdProcess.on('error', error => {
+        this.appendOutput(`\n❌ Failed to start PMD: ${error.message}`);
+        this.appendOutput(
+          `Make sure PMD is installed at: ${this.pmdConfig.executablePath}`
+        );
         reject(error);
       });
     });
@@ -594,14 +654,12 @@ export class ScanService {
    * Display scan results in the output channel
    */
   private displayResults(result: ScanResult): void {
-    this.outputChannel.appendLine('\n📊 Scan Results:');
-    this.outputChannel.appendLine(
-      `Total violations: ${result.totalViolations}`
-    );
-    this.outputChannel.appendLine(`Scan duration: ${result.scanDuration}ms\n`);
+    this.appendOutput('\n📊 Scan Results:');
+    this.appendOutput(`Total violations: ${result.totalViolations}`);
+    this.appendOutput(`Scan duration: ${result.scanDuration}ms\n`);
 
     if (result.violations.length === 0) {
-      this.outputChannel.appendLine('✅ No violations found!');
+      this.appendOutput('✅ No violations found!');
       return;
     }
 
@@ -617,7 +675,7 @@ export class ScanService {
     // Display violations by file
     for (const [file, violations] of violationsByFile) {
       const relativePath = path.relative(result.packagePath, file);
-      this.outputChannel.appendLine(
+      this.appendOutput(
         `\n📄 ${relativePath} (${violations.length} violations):`
       );
 
@@ -630,22 +688,20 @@ export class ScanService {
           ? `${violation.beginLine}-${violation.endLine}`
           : `${violation.beginLine}`;
 
-        this.outputChannel.appendLine(
+        this.appendOutput(
           `  ${priority} Line ${location}: ${violation.message}`
         );
-        this.outputChannel.appendLine(
+        this.appendOutput(
           `     Rule: ${violation.rule} (${violation.ruleset})`
         );
 
         if (violation.externalInfoUrl) {
-          this.outputChannel.appendLine(
-            `     Info: ${violation.externalInfoUrl}`
-          );
+          this.appendOutput(`     Info: ${violation.externalInfoUrl}`);
         }
       }
     }
 
-    this.outputChannel.appendLine('\n');
+    this.appendOutput('\n');
   }
 
   /**
@@ -823,7 +879,7 @@ export class ScanService {
       reportOptions
     );
 
-    this.outputChannel.appendLine(`\nScan results saved to: ${filePath}`);
+    this.appendOutput(`\nScan results saved to: ${filePath}`);
     logger.info(`Scan results saved to: ${filePath}`);
 
     return filePath;
