@@ -8,6 +8,10 @@
 
 Advanced Salesforce DevOps toolkit for package operations, deployments, testing, and changelog management - completely independent from SF CLI.
 
+> **Note**: The animated demos in this README may not display properly in VS Code's markdown preview. 
+> For the best viewing experience, please view this README on [GitHub](https://github.com/Rocko1204/packageforce) 
+> or install the "Markdown Preview Enhanced" extension in VS Code.
+
 ## Installation
 
 ### From VS Code Marketplace

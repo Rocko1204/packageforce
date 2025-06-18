@@ -80,15 +80,15 @@ jobs:
 
       # Optional: Publish to VS Code Marketplace
       # Uncomment these steps when you have a publisher token
-      # - name: Publish to VS Code Marketplace
-      #   if: ${{ github.event.inputs.prerelease != 'true' }}
-      #   run: vsce publish -p ${{ secrets.VSCE_TOKEN }}
-      #   env:
-      #     VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+      - name: Publish to VS Code Marketplace
+        if: ${{ github.event.inputs.prerelease != 'true' }}
+        run: vsce publish -p ${{ secrets.VSCE_TOKEN }}
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
 
       # Optional: Publish to Open VSX Registry
-      # - name: Publish to Open VSX
-      #   if: ${{ github.event.inputs.prerelease != 'true' }}
-      #   run: npx ovsx publish -p ${{ secrets.OVSX_TOKEN }}
-      #   env:
-      #     OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+      #- name: Publish to Open VSX
+      #  if: ${{ github.event.inputs.prerelease != 'true' }}
+      # run: npx ovsx publish -p ${{ secrets.OVSX_TOKEN }}
+      #  env:
+      #    OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
