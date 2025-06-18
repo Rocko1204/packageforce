@@ -3,15 +3,15 @@
   "displayName": "Packageforce",
   "publisher": "Rocko1204",
   "description": "Advanced Salesforce DevOps toolkit for package operations, deployments, testing, and changelog management - independent from SF CLI",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/packageforce.git"
+    "url": "https://github.com/Rocko1204/packageforce.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/packageforce/issues"
+    "url": "https://github.com/Rocko1204/packageforce/issues"
   },
-  "homepage": "https://github.com/yourusername/packageforce#readme",
+  "homepage": "https://github.com/Rocko1204/packageforce#readme",
   "license": "MIT",
   "icon": "icons/packageforce-icon.png",
   "galleryBanner": {
