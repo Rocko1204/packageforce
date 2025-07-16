@@ -7,7 +7,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [1.0.3] - 2025-07-16
 
 ### Fixed
-- Synchronous test execution now uses correct API payload format
+- Synchronous test execution now sends array of test class names directly to the API
+- Fixed multiple API format issues with synchronous test execution
+- Test execution now properly resolves org aliases to usernames (both aliases and usernames work)
+- Improved error handling for null responses in synchronous test execution
 - Changelog entries now append to the end of the table instead of prepending
 - sfdx-project.json formatting is now preserved when updating versions
 - Removed unused imports and parameters in test service
@@ -17,6 +20,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Better formatting preservation during changelog operations
 
 ### Improved
+- Deploy error messages now show complete content without truncation
+- Better formatting for component failures and test failures in deployment logs
 - Test execution error messages are more descriptive
 - Code cleanup and optimization
 

@@ -291,12 +291,27 @@ export class DeployService {
 
       if (failures.length > 0) {
         DeployLogger.error('Component Failures:');
-        const rows = failures.map(failure => [
-          failure.fullName || '',
-          failure.problem || '',
-        ]);
+        DeployLogger.log(''); // Add spacing
 
-        DeployLogger.table(['Component Name', 'Error Message'], rows, [60, 60]);
+        failures.forEach((failure, index) => {
+          DeployLogger.log(
+            `${index + 1}. Component: ${failure.fullName || 'Unknown'}`
+          );
+          DeployLogger.log(`   Type: ${failure.componentType || 'Unknown'}`);
+          DeployLogger.log(
+            `   Error: ${failure.problem || 'No error message'}`
+          );
+
+          // Show additional details if available
+          if (failure.lineNumber) {
+            DeployLogger.log(`   Line: ${failure.lineNumber}`);
+          }
+          if (failure.columnNumber) {
+            DeployLogger.log(`   Column: ${failure.columnNumber}`);
+          }
+          DeployLogger.log(''); // Add spacing between failures
+        });
+
         return;
       }
     }
@@ -309,17 +324,29 @@ export class DeployService {
 
       if (testFailures.length > 0) {
         DeployLogger.error('Test Failures:');
-        const rows = testFailures.map(failure => [
-          failure.name || '',
-          failure.message || '',
-          failure.stackTrace || '',
-        ]);
+        DeployLogger.log(''); // Add spacing
 
-        DeployLogger.table(
-          ['Apex Class', 'Message', 'Stack Trace'],
-          rows,
-          [40, 40, 40]
-        );
+        testFailures.forEach((failure, index) => {
+          DeployLogger.log(
+            `${index + 1}. Test Class: ${failure.name || 'Unknown'}`
+          );
+          DeployLogger.log(`   Method: ${failure.methodName || 'Unknown'}`);
+          DeployLogger.log(
+            `   Message: ${failure.message || 'No error message'}`
+          );
+
+          if (failure.stackTrace) {
+            DeployLogger.log(`   Stack Trace:`);
+            // Format stack trace with proper indentation
+            const stackLines = failure.stackTrace.split('\n');
+            stackLines.forEach(line => {
+              DeployLogger.log(`      ${line}`);
+            });
+          }
+
+          DeployLogger.log(''); // Add spacing between failures
+        });
+
         return;
       }
     }

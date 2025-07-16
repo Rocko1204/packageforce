@@ -190,7 +190,36 @@ export class TestService {
   private async establishConnection(targetOrg?: string): Promise<void> {
     let username = targetOrg;
 
-    if (!username) {
+    // If targetOrg is provided, it might be an alias that needs resolution
+    if (targetOrg) {
+      try {
+        // First, check if it's already a valid username by trying to list all orgs
+        const orgs = await AuthInfo.listAllAuthorizations();
+
+        // Check if targetOrg is an alias
+        const matchingOrg = orgs.find(
+          org => org.aliases?.includes(targetOrg) || org.username === targetOrg
+        );
+
+        if (matchingOrg) {
+          // If it's an alias, get the username; if it's already a username, use it as is
+          username = matchingOrg.username;
+          if (matchingOrg.aliases?.includes(targetOrg)) {
+            this.outputChannel.appendLine(
+              `📝 Resolved alias '${targetOrg}' to username: ${username}`
+            );
+          }
+        } else {
+          // If no match found, assume it's a username and let it fail later if invalid
+          username = targetOrg;
+        }
+      } catch (error) {
+        logger.warn(
+          `Could not verify if '${targetOrg}' is an alias, treating as username`
+        );
+        username = targetOrg;
+      }
+    } else {
       // Try to get the default org
       try {
         // Clear any cached state to ensure we get the latest configuration
@@ -439,30 +468,84 @@ export class TestService {
 
     try {
       // Run tests synchronously using REST API
-      // The synchronous test execution API expects an array of test class IDs
-      const testPayload = {
-        tests: testClassIds,
-      };
+      // Get test class names for the API
+      const testClassNames: string[] = [];
+      for (const classId of testClassIds) {
+        try {
+          const query = `SELECT Name FROM ApexClass WHERE Id = '${classId}'`;
+          const result = await this.connection.query<{ Name: string }>(query);
+          if (result.records && result.records.length > 0) {
+            testClassNames.push(result.records[0].Name);
+          }
+        } catch (error) {
+          logger.warn(`Could not get name for class ID ${classId}`);
+        }
+      }
 
+      if (testClassNames.length === 0) {
+        throw new Error('No test class names could be resolved');
+      }
+
+      // The synchronous test API expects just an array of test class names
       const response = await this.connection.request({
         method: 'POST',
         url: '/services/data/v58.0/tooling/runTestsSynchronous',
-        body: JSON.stringify(testPayload),
+        body: JSON.stringify(testClassNames),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       // Parse results
       const testResults = response as any;
-      const failures: TestFailure[] = [];
 
-      if (testResults.failures && Array.isArray(testResults.failures)) {
-        testResults.failures.forEach((failure: any) => {
-          failures.push({
-            name: failure.name || 'Unknown',
-            methodName: failure.methodName || 'Unknown',
-            message: failure.message || 'No message',
-            stackTrace: failure.stackTrace,
+      // Log the response structure for debugging
+      logger.info(
+        'Synchronous test response structure:',
+        JSON.stringify(testResults, null, 2)
+      );
+      this.outputChannel.appendLine(`Response type: ${typeof testResults}`);
+      this.outputChannel.appendLine(
+        `Response keys: ${testResults ? Object.keys(testResults).join(', ') : 'null'}`
+      );
+
+      const failures: TestFailure[] = [];
+      let totalTests = 0;
+      let failedTests = 0;
+
+      // Handle different response structures
+      if (testResults) {
+        // Check if response is wrapped or direct
+        const results = testResults.result || testResults;
+
+        // Extract test counts
+        totalTests = results.numTestsRun || results.testsRun || 0;
+        failedTests = results.numFailures || results.failures?.length || 0;
+
+        // Extract failures
+        if (results.failures && Array.isArray(results.failures)) {
+          results.failures.forEach((failure: any) => {
+            failures.push({
+              name: failure.name || failure.className || 'Unknown',
+              methodName: failure.methodName || 'Unknown',
+              message: failure.message || 'No message',
+              stackTrace: failure.stackTrace,
+            });
           });
-        });
+        } else if (results.tests && Array.isArray(results.tests)) {
+          // Alternative structure where failures are in tests array
+          results.tests.forEach((test: any) => {
+            if (test.outcome === 'Fail' || test.result === 'Fail') {
+              failures.push({
+                name: test.name || test.className || 'Unknown',
+                methodName: test.methodName || 'Unknown',
+                message: test.message || 'No message',
+                stackTrace: test.stackTrace,
+              });
+            }
+          });
+          totalTests = results.tests.length;
+        }
       }
 
       // Get code coverage
@@ -470,9 +553,6 @@ export class TestService {
       if (apexClassIds.length > 0) {
         coverage = await this.getCodeCoverage(apexClassIds);
       }
-
-      const totalTests = testResults.numTestsRun || 0;
-      const failedTests = testResults.numFailures || 0;
 
       return {
         success: failedTests === 0,
