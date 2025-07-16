@@ -4,6 +4,18 @@ All notable changes to the "Packageforce" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.4] - 2025-07-16
+
+### Fixed
+- Deploy error messages now show complete content without truncation
+- Component failure details include type, line, and column information when available
+- Test failure stack traces are properly formatted with indentation
+
+### Improved
+- Better error message formatting in deployment logs for easier debugging
+- More detailed component and test failure information
+- Cleaner output formatting with proper spacing between errors
+
 ## [1.0.3] - 2025-07-16
 
 ### Fixed
