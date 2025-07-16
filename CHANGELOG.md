@@ -4,6 +4,22 @@ All notable changes to the "Packageforce" extension will be documented in this f
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.3] - 2025-07-16
+
+### Fixed
+- Synchronous test execution now uses correct API payload format
+- Changelog entries now append to the end of the table instead of prepending
+- sfdx-project.json formatting is now preserved when updating versions
+- Removed unused imports and parameters in test service
+
+### Added
+- Custom sfdx-project.json writer that detects and preserves original indentation
+- Better formatting preservation during changelog operations
+
+### Improved
+- Test execution error messages are more descriptive
+- Code cleanup and optimization
+
 ## [1.0.2] - 2025-06-18
 
 ### Changed
