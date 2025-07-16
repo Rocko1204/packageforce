@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import * as fs from 'fs';
 import {
   Connection,
@@ -160,17 +159,9 @@ export class TestService {
       let result: TestResult;
 
       if (options.runAsync !== false) {
-        result = await this.runTestsAsync(
-          testClassIds,
-          apexClassIds,
-          options.packageName
-        );
+        result = await this.runTestsAsync(testClassIds, apexClassIds);
       } else {
-        result = await this.runTestsSync(
-          testClassIds,
-          apexClassIds,
-          options.packageName
-        );
+        result = await this.runTestsSync(testClassIds, apexClassIds);
       }
 
       const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -397,8 +388,7 @@ export class TestService {
 
   private async runTestsAsync(
     testClassIds: string[],
-    apexClassIds: string[],
-    packageName: string
+    apexClassIds: string[]
   ): Promise<TestResult> {
     if (!this.connection) {
       throw new Error('No connection established');
@@ -438,8 +428,7 @@ export class TestService {
 
   private async runTestsSync(
     testClassIds: string[],
-    apexClassIds: string[],
-    packageName: string
+    apexClassIds: string[]
   ): Promise<TestResult> {
     if (!this.connection) {
       throw new Error('No connection established');
@@ -450,8 +439,9 @@ export class TestService {
 
     try {
       // Run tests synchronously using REST API
+      // The synchronous test execution API expects an array of test class IDs
       const testPayload = {
-        tests: testClassIds.map(id => ({ classId: id })),
+        tests: testClassIds,
       };
 
       const response = await this.connection.request({

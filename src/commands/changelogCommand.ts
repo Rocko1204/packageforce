@@ -9,6 +9,7 @@ import {
   PluginSettings,
 } from '../utils/changelogTypes';
 import { Logger } from '../utils/logger';
+import { SfdxProjectWriter } from '../utils/sfdxProjectWriter';
 
 const logger = Logger.getInstance();
 
@@ -268,11 +269,24 @@ export async function executeChangelogCommand() {
           }
         }
 
-        // Save updated sfdx-project.json
+        // Save updated sfdx-project.json with preserved formatting
         progress.report({ message: 'Saving sfdx-project.json...' });
-        projectJson.setContentsFromObject(projectContents);
-        await projectJson.write();
-        updatedFiles.push(projectJson.getPath());
+
+        // Detect original indentation
+        const indentSpaces = await SfdxProjectWriter.detectIndentation(
+          workspaceFolder.uri.fsPath
+        );
+
+        // Write with preserved formatting
+        await SfdxProjectWriter.writeProject(
+          workspaceFolder.uri.fsPath,
+          projectContents,
+          indentSpaces
+        );
+
+        updatedFiles.push(
+          path.join(workspaceFolder.uri.fsPath, 'sfdx-project.json')
+        );
 
         // Stage all updated files
         progress.report({ message: 'Staging files...' });

@@ -161,8 +161,8 @@ export class ChangelogService {
       ? `[${options.reference}](${settings.workItemUrl}${options.reference})`
       : options.reference;
 
-    // Add new entry at the beginning
-    entries.unshift({
+    // Add new entry at the end
+    entries.push({
       version: packageInfo.versionNumber,
       reference: reference,
       author: options.author,
